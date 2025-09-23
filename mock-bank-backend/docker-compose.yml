@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  mock-bank-api:
+    build: .
+    container_name: mock-bank-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+    restart: unless-stopped

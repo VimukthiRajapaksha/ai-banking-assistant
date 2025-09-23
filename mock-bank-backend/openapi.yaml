@@ -1,0 +1,532 @@
+openapi: 3.1.0
+info:
+  title: Mock Banking API
+  description: |
+    A mock banking API server that provides dummy open banking data for testing and development.
+    This API includes accounts, transactions, and basic banking operations for AI banking assistant development.
+  version: 1.0.0
+  contact:
+    name: AI Banking Assistant
+    url: https://github.com/VimukthiRajapaksha/ai-banking-assistant
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: http://mock-bank-backend:3001
+    description: Docker container server
+
+paths:
+  /:
+    get:
+      summary: Get API information
+      description: Returns basic information about the API and available endpoints
+      operationId: getApiInfo
+      tags:
+        - General
+      responses:
+        '200':
+          description: API information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiInfo'
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the API server
+      operationId: healthCheck
+      tags:
+        - General
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /accounts:
+    get:
+      summary: Get all accounts
+      description: Retrieve all banking accounts with their transactions
+      operationId: getAllAccounts
+      tags:
+        - Accounts
+      responses:
+        '200':
+          description: Accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountsResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{accountId}:
+    get:
+      summary: Get specific account
+      description: Retrieve a specific account by its ID with all transactions
+      operationId: getAccountById
+      tags:
+        - Accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The unique identifier of the account
+          schema:
+            type: string
+            example: acc-001
+      responses:
+        '200':
+          description: Account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{accountId}/transactions:
+    get:
+      summary: Get account transactions
+      description: Retrieve transactions for a specific account with optional filtering and pagination
+      operationId: getAccountTransactions
+      tags:
+        - Transactions
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The unique identifier of the account
+          schema:
+            type: string
+            example: acc-001
+        - name: limit
+          in: query
+          required: false
+          description: Number of transactions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 10
+        - name: offset
+          in: query
+          required: false
+          description: Number of transactions to skip (for pagination)
+          schema:
+            type: integer
+            minimum: 0
+            example: 0
+        - name: category
+          in: query
+          required: false
+          description: Filter by transaction category (partial match, case-insensitive)
+          schema:
+            type: string
+            example: "food"
+        - name: type
+          in: query
+          required: false
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum: [credit, debit]
+            example: debit
+        - name: startDate
+          in: query
+          required: false
+          description: Filter transactions from this date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-09-01"
+        - name: endDate
+          in: query
+          required: false
+          description: Filter transactions up to this date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-09-30"
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ApiInfo:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Mock Banking API Server"
+        version:
+          type: string
+          example: "1.0.0"
+        endpoints:
+          type: array
+          items:
+            type: string
+          example:
+            - "GET /accounts - Get all accounts with transactions"
+            - "GET /accounts/:accountId - Get specific account with transactions"
+            - "GET /accounts/:accountId/transactions - Get transactions for specific account with filtering"
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-23T10:30:00.000Z"
+        uptime:
+          type: number
+          description: Server uptime in seconds
+          example: 123.456
+
+    Account:
+      type: object
+      properties:
+        AccountId:
+          type: string
+          description: Unique identifier for the account
+          example: "acc-001"
+        Status:
+          type: string
+          enum: [Enabled, Disabled, Deleted, ProForma, Pending]
+          example: "Enabled"
+        StatusUpdateDateTime:
+          type: string
+          format: date-time
+          example: "2025-09-20T10:00:00+00:00"
+        Currency:
+          type: string
+          example: "GBP"
+        AccountType:
+          type: string
+          enum: [Business, Personal]
+          example: "Personal"
+        AccountSubType:
+          type: string
+          enum: [ChargeCard, CreditCard, CurrentAccount, EMoney, Loan, Mortgage, PrePaidCard, Savings]
+          example: "CurrentAccount"
+        Nickname:
+          type: string
+          example: "Primary Current Account"
+        OpeningDate:
+          type: string
+          format: date
+          example: "2020-01-15"
+        MaturityDate:
+          type: string
+          format: date
+          nullable: true
+          example: null
+        SwitchStatus:
+          type: string
+          enum: [NotSwitched, SwitchCompleted]
+          example: "NotSwitched"
+        Account:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountIdentification'
+        Servicer:
+          $ref: '#/components/schemas/BranchAndFinancialInstitutionIdentification'
+        Balance:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashBalance'
+        Transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+
+    AccountIdentification:
+      type: object
+      properties:
+        SchemeName:
+          type: string
+          enum: [UK.OBIE.BBAN, UK.OBIE.IBAN, UK.OBIE.PAN, UK.OBIE.Paym, UK.OBIE.SortCodeAccountNumber]
+          example: "UK.OBIE.SortCodeAccountNumber"
+        Identification:
+          type: string
+          example: "12345678901234"
+        Name:
+          type: string
+          example: "Mr John Smith"
+        SecondaryIdentification:
+          type: string
+          example: "00021"
+
+    BranchAndFinancialInstitutionIdentification:
+      type: object
+      properties:
+        SchemeName:
+          type: string
+          enum: [UK.OBIE.BICFI]
+          example: "UK.OBIE.BICFI"
+        Identification:
+          type: string
+          example: "NWBKGB2L"
+
+    CashBalance:
+      type: object
+      properties:
+        AccountId:
+          type: string
+          example: "acc-001"
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        CreditDebitIndicator:
+          type: string
+          enum: [Credit, Debit]
+          example: "Credit"
+        Type:
+          type: string
+          enum: [ClosingAvailable, ClosingBooked, ClosingCleared, Expected, ForwardAvailable, Information, InterimAvailable, InterimBooked, InterimCleared, OpeningAvailable, OpeningBooked, OpeningCleared, PreviouslyClosedBooked]
+          example: "InterimAvailable"
+        DateTime:
+          type: string
+          format: date-time
+          example: "2025-09-23T08:00:00+00:00"
+        CreditLine:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditLine'
+
+    CreditLine:
+      type: object
+      properties:
+        Included:
+          type: boolean
+          example: true
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        Type:
+          type: string
+          enum: [Available, Credit, Emergency, Pre-Agreed, Temporary]
+          example: "Pre-Agreed"
+
+    Amount:
+      type: object
+      properties:
+        Amount:
+          type: string
+          pattern: ^\d{1,13}\.\d{1,5}$
+          example: "2850.75"
+        Currency:
+          type: string
+          example: "GBP"
+
+    Transaction:
+      type: object
+      properties:
+        AccountId:
+          type: string
+          example: "acc-001"
+        TransactionId:
+          type: string
+          example: "txn-001"
+        TransactionReference:
+          type: string
+          example: "CP-001-20250922"
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        CreditDebitIndicator:
+          type: string
+          enum: [Credit, Debit]
+          example: "Debit"
+        Status:
+          type: string
+          enum: [Booked, Pending]
+          example: "Booked"
+        BookingDateTime:
+          type: string
+          format: date-time
+          example: "2025-09-22T14:30:00+00:00"
+        ValueDateTime:
+          type: string
+          format: date-time
+          example: "2025-09-22T14:30:00+00:00"
+        TransactionInformation:
+          type: string
+          example: "Coffee Shop Purchase"
+        BankTransactionCode:
+          $ref: '#/components/schemas/BankTransactionCode'
+        ProprietaryBankTransactionCode:
+          $ref: '#/components/schemas/ProprietaryBankTransactionCode'
+        Balance:
+          $ref: '#/components/schemas/CashBalance'
+        MerchantDetails:
+          $ref: '#/components/schemas/MerchantDetails'
+        CreditorAccount:
+          $ref: '#/components/schemas/AccountIdentification'
+
+    BankTransactionCode:
+      type: object
+      properties:
+        Code:
+          type: string
+          example: "ReceivedCreditTransfer"
+        SubCode:
+          type: string
+          example: "DomesticCreditTransfer"
+
+    ProprietaryBankTransactionCode:
+      type: object
+      properties:
+        Code:
+          type: string
+          example: "Transfer"
+        Issuer:
+          type: string
+          example: "AlphaBank"
+
+    MerchantDetails:
+      type: object
+      properties:
+        MerchantName:
+          type: string
+          example: "Central Perk Coffee"
+        MerchantCategoryCode:
+          type: string
+          example: "5814"
+
+    AccountsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        count:
+          type: integer
+          description: Number of accounts returned
+          example: 3
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-23T10:30:00.000Z"
+
+    AccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Account'
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-23T10:30:00.000Z"
+
+    TransactionsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            accountId:
+              type: string
+              example: "acc-001"
+            accountName:
+              type: string
+              example: "Primary Checking"
+            transactions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transaction'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-23T10:30:00.000Z"
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of transactions available
+          example: 5
+        count:
+          type: integer
+          description: Number of transactions returned in this response
+          example: 3
+        offset:
+          type: integer
+          description: Number of transactions skipped
+          example: 0
+        limit:
+          type: integer
+          nullable: true
+          description: Maximum number of transactions requested
+          example: 3
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Account not found"
+        message:
+          type: string
+          example: "Account with ID acc-999 does not exist"
+
+tags:
+  - name: General
+    description: General API operations
+  - name: Accounts
+    description: Banking account operations
+  - name: Transactions
+    description: Transaction-related operations
