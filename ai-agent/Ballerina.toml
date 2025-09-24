@@ -1,0 +1,28 @@
+[package]
+org = "vimukthir"
+name = "banking_agent"
+version = "0.1.1"
+
+[build-options]
+sticky = true
+
+# [[dependency]]
+# org = "ballerina"
+# name = "ai"
+# version = "1.5.2"
+# repository = "local"
+
+# [[dependency]]
+# org = "ballerinax"
+# name = "ai.anthropic"
+# version = "1.1.2"
+# repository = "local"
+
+# [[dependency]]
+# org = "ballerina"
+# name = "mcp"
+# version = "0.9.1"
+# repository = "local"
+
+[ballerina.http]
+traceLogConsole = true
