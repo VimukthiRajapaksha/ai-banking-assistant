@@ -15,7 +15,7 @@
 # under the License.
 
 import logging
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from mcp.server.fastmcp import Context, FastMCP
 from pydantic import Field
@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 configs: ServerConfigs = ServerConfigs()
 
 # Create an MCP server
-mcp = FastMCP(name = "Open Banking MCP Server", host=configs.mcp_host, port=configs.mcp_port)
+mcp = FastMCP(
+    name="Open Banking MCP Server", host=configs.mcp_host, port=configs.mcp_port
+)
 
 http_client: HTTPClient = HTTPClient(configs=configs)
 
@@ -51,15 +53,13 @@ async def get_accounts(
         ),
     ] = "",
     sub_resource: Annotated[
-        Literal[
-            "transactions"
-        ],
+        Literal["transactions"],
         Field(
             description="Specifies the type of account sub-resource to retrieve for the given account."
         ),
     ] = "",
 ) -> Annotated[
-    Dict[str, Any],
+    Dict | List,
     Field(
         description=(
             "A dictionary containing account information as returned by the Open Banking API. "
