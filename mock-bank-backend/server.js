@@ -149,7 +149,7 @@ app.get('/accounts/:accountId/transactions', (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
-    status: 'healthy',
+    status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
