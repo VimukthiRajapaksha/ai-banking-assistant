@@ -105,17 +105,13 @@ def get_products(
         ),
     ] = "",
 ) -> Annotated[
-    Dict[str, Any],
+    Dict | List,
     Field(
         description=(
             "Banking product information: "
             "- Product details (name, type, description) "
             "- Interest rates (fixed/variable, min/max rates, representative APR) "
             "- Loan terms (min/max amounts, repayment periods) "
-            "- Eligibility criteria (age, income, credit score requirements) "
-            "- Product features and fees "
-            "- When product_id is specified: returns single product details "
-            "- When product_id is blank: returns array of all available products for comparison"
         )
     ),
 ]:
