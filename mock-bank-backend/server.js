@@ -1,8 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 
-// Import mock data from external file
+// Import mock data from external files
 const mockAccounts = require('./data/accounts');
+const mockProducts = require('./data/products');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,7 +21,9 @@ app.get('/', (req, res) => {
     endpoints: [
       'GET /accounts - Get all accounts with transactions',
       'GET /accounts/:accountId - Get specific account with transactions',
-      'GET /accounts/:accountId/transactions - Get transactions for specific account with filtering'
+      'GET /accounts/:accountId/transactions - Get transactions for specific account with filtering',
+      'GET /products - Get all available loan products',
+      'GET /products/:productId - Get specific product details'
     ]
   });
 });
@@ -135,6 +138,84 @@ app.get('/accounts/:accountId/transactions', (req, res) => {
           limit: limit ? parseInt(limit) : null
         }
       },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// Get all products
+app.get('/products', (req, res) => {
+  try {
+    // Optional query parameters for filtering
+    const { type, minAmount, maxAmount, maxRate } = req.query;
+    let products = [...mockProducts];
+    
+    // Filter by product type if provided
+    if (type) {
+      products = products.filter(product => 
+        product.ProductType.toLowerCase() === type.toLowerCase()
+      );
+    }
+    
+    // Filter by minimum loan amount if provided
+    if (minAmount) {
+      products = products.filter(product => 
+        product.LoanDetails && product.LoanDetails.MinAmount <= parseInt(minAmount)
+      );
+    }
+    
+    // Filter by maximum loan amount if provided
+    if (maxAmount) {
+      products = products.filter(product => 
+        product.LoanDetails && product.LoanDetails.MaxAmount >= parseInt(maxAmount)
+      );
+    }
+    
+    // Filter by maximum interest rate if provided
+    if (maxRate) {
+      products = products.filter(product => 
+        parseFloat(product.InterestRate.Rate) <= parseFloat(maxRate)
+      );
+    }
+    
+    res.json({
+      success: true,
+      data: products,
+      count: products.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// Get specific product by ID
+app.get('/products/:productId', (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = mockProducts.find(prod => prod.ProductId === productId);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found',
+        message: `Product with ID ${productId} does not exist`
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: product,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

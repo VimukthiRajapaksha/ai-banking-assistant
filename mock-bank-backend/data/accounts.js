@@ -4,7 +4,7 @@ const mockAccounts = [
     "AccountId": "acc-001",
     "Status": "Enabled",
     "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
-    "Currency": "GBP",
+    "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "CurrentAccount",
     "Nickname": "Primary Current Account",
@@ -28,7 +28,7 @@ const mockAccounts = [
         "AccountId": "acc-001",
         "Amount": {
           "Amount": "2850.75",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
@@ -38,7 +38,7 @@ const mockAccounts = [
             "Included": true,
             "Amount": {
               "Amount": "500.00",
-              "Currency": "GBP"
+              "Currency": "USD"
             },
             "Type": "Pre-Agreed"
           }
@@ -48,7 +48,7 @@ const mockAccounts = [
         "AccountId": "acc-001",
         "Amount": {
           "Amount": "2850.75",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimBooked",
@@ -62,7 +62,7 @@ const mockAccounts = [
         "TransactionReference": "CP-001-20250922",
         "Amount": {
           "Amount": "4.75",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
@@ -80,7 +80,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "2850.75",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Credit",
           "Type": "InterimBooked"
@@ -96,7 +96,7 @@ const mockAccounts = [
         "TransactionReference": "SAL-002-20250921",
         "Amount": {
           "Amount": "3200.00",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
@@ -110,7 +110,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "2855.50",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Credit",
           "Type": "InterimBooked"
@@ -127,7 +127,7 @@ const mockAccounts = [
         "TransactionReference": "GRO-003-20250920",
         "Amount": {
           "Amount": "89.32",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
@@ -141,7 +141,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "2766.18",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Credit",
           "Type": "InterimBooked"
@@ -157,7 +157,7 @@ const mockAccounts = [
     "AccountId": "acc-002",
     "Status": "Enabled",
     "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
-    "Currency": "GBP",
+    "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "Savings",
     "Nickname": "High Yield Savings",
@@ -181,7 +181,7 @@ const mockAccounts = [
         "AccountId": "acc-002",
         "Amount": {
           "Amount": "15750.25",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
@@ -191,7 +191,7 @@ const mockAccounts = [
         "AccountId": "acc-002",
         "Amount": {
           "Amount": "15750.25",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimBooked",
@@ -205,7 +205,7 @@ const mockAccounts = [
         "TransactionReference": "INT-006-20250920",
         "Amount": {
           "Amount": "23.45",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
@@ -219,7 +219,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "15750.25",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Credit",
           "Type": "InterimBooked"
@@ -231,7 +231,7 @@ const mockAccounts = [
         "TransactionReference": "TRF-007-20250915",
         "Amount": {
           "Amount": "500.00",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
@@ -245,7 +245,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "15726.80",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Credit",
           "Type": "InterimBooked"
@@ -262,7 +262,7 @@ const mockAccounts = [
     "AccountId": "acc-003",
     "Status": "Enabled",
     "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
-    "Currency": "GBP",
+    "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "CreditCard",
     "Nickname": "Platinum Credit Card",
@@ -285,7 +285,7 @@ const mockAccounts = [
         "AccountId": "acc-003",
         "Amount": {
           "Amount": "1254.70",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Debit",
         "Type": "InterimBooked",
@@ -295,7 +295,7 @@ const mockAccounts = [
             "Included": true,
             "Amount": {
               "Amount": "8500.00",
-              "Currency": "GBP"
+              "Currency": "USD"
             },
             "Type": "Credit"
           }
@@ -305,7 +305,7 @@ const mockAccounts = [
         "AccountId": "acc-003",
         "Amount": {
           "Amount": "7245.30",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
@@ -319,7 +319,7 @@ const mockAccounts = [
         "TransactionReference": "SHP-009-20250922",
         "Amount": {
           "Amount": "156.99",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
@@ -333,7 +333,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "1254.70",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Debit",
           "Type": "InterimBooked"
@@ -349,7 +349,7 @@ const mockAccounts = [
         "TransactionReference": "RST-010-20250921",
         "Amount": {
           "Amount": "75.40",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
@@ -363,7 +363,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "1097.71",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Debit",
           "Type": "InterimBooked"
@@ -379,7 +379,7 @@ const mockAccounts = [
         "TransactionId": "txn-011",
         "Amount": {
           "Amount": "500.00",
-          "Currency": "GBP"
+          "Currency": "USD"
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
@@ -393,7 +393,7 @@ const mockAccounts = [
         "Balance": {
           "Amount": {
             "Amount": "1022.31",
-            "Currency": "GBP"
+            "Currency": "USD"
           },
           "CreditDebitIndicator": "Debit",
           "Type": "InterimBooked"

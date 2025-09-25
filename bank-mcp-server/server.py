@@ -30,7 +30,7 @@ configs: ServerConfigs = ServerConfigs()
 
 # Create an MCP server
 mcp = FastMCP(
-    name="Open Banking MCP Server", host=configs.mcp_host, port=configs.mcp_port
+    name="Banking MCP Server", host=configs.mcp_host, port=configs.mcp_port
 )
 
 http_client: HTTPClient = HTTPClient(configs=configs)
@@ -84,42 +84,51 @@ async def get_accounts(
     return http_client.get(url=accounts_url, headers=headers)
 
 
-# @mcp.tool(
-#     description=(
-#         "Retrieves transaction information for a user from their bank via the Open Banking API. "
-#         "Call this tool to obtain details for a specific transaction by its logical ID, or all transactions if no ID is provided. "
-#         "Use this tool when you need transaction history, transaction amounts, dates, descriptions, or other transaction metadata for a user. "
-#         "Pass the 'transaction_id' parameter to fetch a specific transaction, or leave it blank to fetch all transactions."
-#     )
-# )
-def get_transactions(
+@mcp.tool(
+    description=(
+        "Retrieves banking product information including loans, mortgages, and interest rates from the bank. "
+        "Use this tool when you need to find loan products, compare interest rates, check loan eligibility criteria, or get details about banking products. "
+        "Essential for answering questions about loan affordability, product features, interest rates, loan terms, and eligibility requirements. "
+        "Pass 'product_id' to get specific product details, or leave blank to retrieve all available products for comparison."
+    )
+)
+def get_products(
     ctx: Context,
-    transaction_id: Annotated[
+    product_id: Annotated[
         str,
         Field(
-            description="The logical ID of the transaction to fetch. If blank, all transactions will be returned."
+            description=(
+                "The unique identifier of the banking product to fetch (e.g., 'loan-001', 'loan-002'). "
+                "Leave blank to retrieve all available products. Use specific product ID when you need "
+                "detailed information about a particular loan or banking product."
+            )
         ),
     ] = "",
 ) -> Annotated[
     Dict[str, Any],
     Field(
         description=(
-            "A dictionary containing transaction information as returned by the Open Banking API. "
-            "Includes transaction amounts, dates, descriptions, and other metadata. "
-            "If 'transaction_id' is provided, returns details for that transaction; otherwise, returns all transactions."
+            "Banking product information: "
+            "- Product details (name, type, description) "
+            "- Interest rates (fixed/variable, min/max rates, representative APR) "
+            "- Loan terms (min/max amounts, repayment periods) "
+            "- Eligibility criteria (age, income, credit score requirements) "
+            "- Product features and fees "
+            "- When product_id is specified: returns single product details "
+            "- When product_id is blank: returns array of all available products for comparison"
         )
     ),
 ]:
-    """Fetch transactions from the Open Banking API."""
-    transactions_url: str = configs.server_url.rstrip("/") + "/transactions"
-    if transaction_id:
-        transactions_url += f"/{transaction_id}"
+    """Fetch banking products and loan information from the Open Banking API."""
+    products_url: str = configs.server_url.rstrip("/") + "/products"
+    if product_id:
+        products_url += f"/{product_id}"
 
     headers: dict[str, str] = {
         "Authorization": f"Bearer {ctx.request_context.request.headers.get('x-forwarded-authorization')}"
     }
 
     logger.info(
-        f"Fetching transactions from URL: {transactions_url} with headers: {headers}"
+        f"Fetching products from URL: {products_url} with headers: {headers}"
     )
-    return http_client.get(url=transactions_url, headers=headers)
+    return http_client.get(url=products_url, headers=headers)
