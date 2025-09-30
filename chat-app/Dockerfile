@@ -1,32 +1,34 @@
 # Build stage
 FROM node:18-alpine AS builder
-
-# Install pnpm
 RUN npm install -g pnpm
-
 WORKDIR /app
-
-# Copy package files
 COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies
 RUN pnpm install --frozen-lockfile
-
-# Copy source code
 COPY . .
-
-# Build the application
 RUN pnpm build
 
 # Production stage
 FROM node:18-alpine AS runner
 
 WORKDIR /app
-
-# Install pnpm in production stage
 RUN npm install -g pnpm
 
-# Set environment to production
+# Accept build arguments for runtime configuration
+ARG OB_SERVER_IAM_URL
+ARG OB_CLIENT_ID
+ARG OB_CLIENT_SECRET
+ARG OB_CLIENT_SCOPES
+ARG OB_CLIENT_REDIRECT_URI
+ARG OB_AGENT_URL
+
+# Set environment variables from build args (with defaults)
+ENV OB_SERVER_IAM_URL=${OB_SERVER_IAM_URL}
+ENV OB_CLIENT_ID=${OB_CLIENT_ID}
+ENV OB_CLIENT_SECRET=${OB_CLIENT_SECRET}
+ENV OB_CLIENT_SCOPES=${OB_CLIENT_SCOPES}
+ENV OB_CLIENT_REDIRECT_URI=${OB_CLIENT_REDIRECT_URI}
+ENV OB_AGENT_URL=${OB_AGENT_URL}
+
 ENV NODE_ENV=production
 
 # Create a non-root user
