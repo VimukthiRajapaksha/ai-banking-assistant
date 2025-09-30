@@ -25,5 +25,6 @@ class ServerConfigs(BaseSettings):
         extra="ignore",
     )
     server_url: str
+    server_api_key: str
     mcp_host: str = "localhost"
     mcp_port: int = 8000

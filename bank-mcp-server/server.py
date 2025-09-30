@@ -76,9 +76,14 @@ async def get_accounts(
     if sub_resource:
         accounts_url += f"/{sub_resource}"
 
-    headers: dict[str, str] = {
-        "Authorization": f"Bearer {ctx.request_context.request.headers.get('x-forwarded-authorization')}"
-    }
+    headers: dict[str, str] = {}
+    
+    # Only add Authorization header if x-forwarded-authorization is present
+    auth_token = ctx.request_context.request.headers.get('x-forwarded-authorization')
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
+    if configs.server_api_key:
+        headers["api-key"] = configs.server_api_key
 
     logger.info(f"Fetching accounts from URL: {accounts_url} with headers: {headers}")
     return http_client.get(url=accounts_url, headers=headers)
@@ -120,9 +125,14 @@ def get_products(
     if product_id:
         products_url += f"/{product_id}"
 
-    headers: dict[str, str] = {
-        "Authorization": f"Bearer {ctx.request_context.request.headers.get('x-forwarded-authorization')}"
-    }
+    headers: dict[str, str] = {}
+    
+    # Only add Authorization header if x-forwarded-authorization is present
+    auth_token = ctx.request_context.request.headers.get('x-forwarded-authorization')
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
+    if configs.server_api_key:
+        headers["api-key"] = configs.server_api_key
 
     logger.info(
         f"Fetching products from URL: {products_url} with headers: {headers}"
