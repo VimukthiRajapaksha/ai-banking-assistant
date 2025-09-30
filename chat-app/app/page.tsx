@@ -64,7 +64,7 @@ export default function ChatPage() {
   const handleSignIn = () => {
     const redirectionMessage: Message = {
       id: "3",
-      content: "🔐 I'm taking you to bank's secure login page now. You'll be back here in just a moment!",
+      content: "I'm taking you to bank's secure login page now 🔐. You'll be back here in just a moment!",
       sender: "agent",
       timestamp: new Date(),
     };
@@ -75,24 +75,27 @@ export default function ChatPage() {
     window.location.href = "/api/auth/login"
   }
 
+  // Function to add welcome back message after successful login
+  const addWelcomeBackMessage = () => {
+    const welcomeBackMessage: Message = {
+      id: "3",
+      content: generateWelcomeBackMessage(),
+      sender: "agent",
+      timestamp: new Date(),
+    }
+    const updatedMessages = [...messages, welcomeBackMessage]
+    setMessages(updatedMessages)
+    saveMessagesToStorage(updatedMessages)
+  }
+
   // Add function for bank sign-out
   const handleSignOut = () => {
     // Clear session data and messages
     Cookies.remove('session_id')
-    // clearMessagesFromStorage()
+    clearMessagesFromStorage()
     router.push("/")
     window.location.href = "/"
   }
-
-  // useEffect(() => {
-  //   // Also add to window for backward compatibility
-  //   (window as any).handleSignIn = handleSignIn
-
-  //   // Cleanup function
-  //   return () => {
-  //     delete (window as any).handleSignIn
-  //   }
-  // }, [router])
 
   useEffect(() => {
     // Check for error parameters in URL
@@ -134,37 +137,62 @@ export default function ChatPage() {
     }
   }, [])
 
+  // Effect to handle successful login and add welcome back message
+  useEffect(() => {
+    // Check if user just logged in (has sessionId but no welcome back message yet)
+    if (sessionId && messages.length > 0) {
+      const hasWelcomeBackMessage = messages.some(msg => 
+        msg.content.includes("Thanks for signing in!")
+      )
+      
+      // Only add welcome back message if user just logged in
+      if (!hasWelcomeBackMessage) {
+        // Small delay to ensure the page has settled after redirect
+        setTimeout(() => {
+          addWelcomeBackMessage()
+        }, 500)
+      }
+    }
+  }, [sessionId, messages])
+
+
+//   return `# Hey there! 👋
+// <br>
+// I'm your personal banking buddy! I can help you check balances, track spending, and answer questions about your accounts. 
+
+// Just need to get you signed in first so I can access your info securely 😊
+
+
 
   // Function to generate greeting message based on session state
-  const generateGreetingMessage = (isSignedIn: boolean): string => {
-
-    const buttonSection = isSignedIn ?
-      `<div style="text-align: center; margin: 24px 0;">
-      <button class="whatsapp-signin-button" onclick="handleBankSignIn()">
-        🚪 Sign Out
-      </button>
-    </div>` :
-      `<div style="text-align: center; margin: 24px 0;">
-      <button class="whatsapp-signin-button" onclick="handleBankSignIn()">
-        🏦 Sign in with Bank
-      </button>
-    </div>`;
-
+  const generateGreetingMessage = (): string => {
+    // Always show the welcome message for first-time visitors
     return `# Welcome to Family Bank! 👋
 <br>
-Hi! I'm your Banking Assistant. I can help you with account balances, spending insights, and transaction details.
+Hi! I'm your personal banking assistant. To help you with your questions about accounts, check balances, and track spending, please sign in securely with your bank.
+
+<div style="text-align: center; margin: 24px 0;">
+  <button class="whatsapp-signin-button" onclick="handleSignIn()">
+    🏦 Sign in with Bank
+  </button>
+</div>
+
+> Your data is secure & encrypted 🔐`
+  }
+
+  // Function to generate welcome back message for authenticated users
+  const generateWelcomeBackMessage = (): string => {
+    return `# Thanks for signing in! 🎉
+<br>
+Great! Now I can help you with your banking needs.
 <br><br>
 
 **Try asking:**
-- "What's my current balance?" 💰
-- "How much did I spend on eating out last month?" 🍽️
-- "I have a recurring payment of $15.99. What is it?" 🔄
-- "Show me my largest expenses this week" 📊
-<br>
-
-${buttonSection}
-
-> Note: Your banking information is protected with industry-standard security measures.`
+- "What's my savings account balance?" 💰  
+- "How much did I spend on eating out last month?" 🍽️  
+- "I have a recurring payment of $15.99. What is it?" 🔄  
+- "Show me my largest expenses this week" 📊  
+`
   }
 
   // Initialize banking agent and then show greeting
@@ -175,8 +203,26 @@ ${buttonSection}
     if (savedMessages.length > 0) {
       // If we have saved messages, use them
       setMessages(savedMessages)
+      
+      // If user is logged in and we don't have a welcome back message, add it
+      if (sessionId) {
+        const hasWelcomeBackMessage = savedMessages.some(msg => 
+          msg.content.includes("Thanks for signing in!")
+        )
+        if (!hasWelcomeBackMessage) {
+          const welcomeBackMessage: Message = {
+            id: "3",
+            content: generateWelcomeBackMessage(),
+            sender: "agent",
+            timestamp: new Date(),
+          }
+          const updatedMessages = [...savedMessages, welcomeBackMessage]
+          setMessages(updatedMessages)
+          saveMessagesToStorage(updatedMessages)
+        }
+      }
     } else {
-      // If no saved messages, create the initial greeting
+      // If no saved messages, create the initial greeting (always show welcome message first)
       const hiMessage: Message = {
         id: "1",
         content: "Hi!",
@@ -186,12 +232,24 @@ ${buttonSection}
 
       const greetingMessage: Message = {
         id: "2",
-        content: generateGreetingMessage(!!sessionId),
+        content: generateGreetingMessage(),
         sender: "agent",
         timestamp: new Date(),
       };
 
-      const initialMessages = [hiMessage, greetingMessage]
+      let initialMessages = [hiMessage, greetingMessage]
+      
+      // If user is already logged in on first visit, add welcome back message
+      if (sessionId) {
+        const welcomeBackMessage: Message = {
+          id: "3",
+          content: generateWelcomeBackMessage(),
+          sender: "agent",
+          timestamp: new Date(),
+        }
+        initialMessages = [...initialMessages, welcomeBackMessage]
+      }
+
       setMessages(initialMessages)
       saveMessagesToStorage(initialMessages)
     }
@@ -285,7 +343,7 @@ ${buttonSection}
           <div className="whatsapp-sidebar-header">
             <div className="whatsapp-user-profile">
               <div className="whatsapp-user-avatar">
-                JA
+                KW
               </div>
               <div className="whatsapp-user-name">
                 Kevin William

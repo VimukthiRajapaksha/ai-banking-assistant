@@ -8,14 +8,17 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const error = searchParams.get("error")
 
+  // Get the actual base URL for redirects (works in Docker)
+  const baseUrl = process.env.OB_CLIENT_BASE_URL || request.url
+
   // Handle authorization errors
   if (error) {
-    return NextResponse.redirect(new URL(`/?error=${error}`, request.url))
+    return NextResponse.redirect(new URL(`/?error=${error}`, baseUrl))
   }
 
   if (!code) {
     console.error("Authorization code not found")
-    return NextResponse.redirect(new URL("/?error=no_code", request.url))
+    return NextResponse.redirect(new URL("/?error=no_code", baseUrl))
   }
 
   try {
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest) {
       .buildSingleton()
       .getTokenFromCacheOrRetrieve(sessionId, { code: code });
 
-    const nextResponse = NextResponse.redirect(new URL("/", request.url))
+    const nextResponse = NextResponse.redirect(new URL("/", baseUrl))
 
     // Set secure HTTP-only cookies for token storage
     nextResponse.cookies.set("session_id", sessionId, {
@@ -40,6 +43,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("OAuth callback error:", error)
-    return NextResponse.redirect(new URL("/?error=auth_failed", request.url))
+    return NextResponse.redirect(new URL("/?error=auth_failed", baseUrl))
   }
 }

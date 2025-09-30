@@ -10,7 +10,7 @@ export class AuthorizationCodeGrant extends ClientCredentialsGrant {
     const body: object = {
       grant_type: "authorization_code",
       code: params.code,
-      redirect_uri: process.env.OB_CLIENT_REDIRECT_URI
+      redirect_uri: process.env.OB_CLIENT_BASE_URL + "/auth/callback"
     };
     return super.getToken(body);
   }

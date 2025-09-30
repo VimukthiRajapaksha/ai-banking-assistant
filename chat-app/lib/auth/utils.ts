@@ -48,7 +48,7 @@ export const getAuthorizationRequest = (params: {
             }
         },
         "response_type": "code id_token",
-        "redirect_uri": process.env.OB_CLIENT_REDIRECT_URI,
+        "redirect_uri": process.env.OB_CLIENT_BASE_URL + "/auth/callback",
         "state": params.state,
         "nonce": params.nonce,
         "jti": getRandomString()
@@ -104,7 +104,7 @@ export const getAuthorizationUrl = (params: {
     const url = new URL(`${process.env.OB_SERVER_IAM_URL}/oauth2/authorize`);
     url.searchParams.append("response_type", "code");
     url.searchParams.append("client_id", process.env.OB_CLIENT_ID ?? "");
-    url.searchParams.append("redirect_uri", process.env.OB_CLIENT_REDIRECT_URI ?? "");
+    url.searchParams.append("redirect_uri", process.env.OB_CLIENT_BASE_URL + "/auth/callback");
     url.searchParams.append("scope", process.env.OB_CLIENT_SCOPES ?? "");
     url.searchParams.append("state", params.state);
     url.searchParams.append("nonce", params.nonce);

@@ -4,9 +4,14 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'WhatsApp Web',
-  description: 'WhatsApp Web - Simple. Secure. Reliable messaging.',
+  title: 'Family Bank Assistant',
+  description: 'Your personal banking assistant - secure, reliable banking help.',
   generator: 'Next.js',
+  icons: {
+    icon: 'https://img.icons8.com/?size=40&id=16713&format=png',
+    shortcut: 'https://img.icons8.com/?size=40&id=16713&format=png',
+    apple: 'https://img.icons8.com/?size=40&id=16713&format=png',
+  },
 }
 
 export default function RootLayout({
