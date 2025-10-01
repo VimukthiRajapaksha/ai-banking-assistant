@@ -4,6 +4,7 @@ const cors = require('cors');
 // Import mock data from external files
 const mockAccounts = require('./data/accounts');
 const mockProducts = require('./data/products');
+const mockUser = require('./data/user');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,10 +16,11 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Mock Banking API Server',
     version: '1.0.0',
     endpoints: [
+      'GET /me - Get current user profile information',
       'GET /accounts - Get all accounts with transactions',
       'GET /accounts/:accountId - Get specific account with transactions',
       'GET /accounts/:accountId/transactions - Get transactions for specific account with filtering',
@@ -26,6 +28,23 @@ app.get('/', (req, res) => {
       'GET /products/:productId - Get specific product details'
     ]
   });
+});
+
+// Get current user profile
+app.get('/me', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: mockUser,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
 });
 
 // Get all accounts with transactions
@@ -51,7 +70,7 @@ app.get('/accounts/:accountId', (req, res) => {
   try {
     const { accountId } = req.params;
     const account = mockAccounts.find(acc => acc.AccountId === accountId);
-    
+
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -59,7 +78,7 @@ app.get('/accounts/:accountId', (req, res) => {
         message: `Account with ID ${accountId} does not exist`
       });
     }
-    
+
     res.json({
       success: true,
       data: account,
@@ -79,7 +98,7 @@ app.get('/accounts/:accountId/transactions', (req, res) => {
   try {
     const { accountId } = req.params;
     const account = mockAccounts.find(acc => acc.AccountId === accountId);
-    
+
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -87,44 +106,44 @@ app.get('/accounts/:accountId/transactions', (req, res) => {
         message: `Account with ID ${accountId} does not exist`
       });
     }
-    
+
     // Optional query parameters for filtering
     const { limit, offset, category, type, startDate, endDate } = req.query;
     let transactions = [...account.Transactions];
-    
+
     // Filter by category if provided (search in TransactionInformation and MerchantDetails)
     if (category) {
-      transactions = transactions.filter(txn => 
+      transactions = transactions.filter(txn =>
         txn.TransactionInformation.toLowerCase().includes(category.toLowerCase()) ||
         (txn.MerchantDetails && txn.MerchantDetails.MerchantName.toLowerCase().includes(category.toLowerCase()))
       );
     }
-    
+
     // Filter by type if provided
     if (type) {
-      transactions = transactions.filter(txn => 
+      transactions = transactions.filter(txn =>
         txn.CreditDebitIndicator.toLowerCase() === type.toLowerCase()
       );
     }
-    
+
     // Filter by date range if provided
     if (startDate) {
-      transactions = transactions.filter(txn => 
+      transactions = transactions.filter(txn =>
         txn.BookingDateTime.split('T')[0] >= startDate
       );
     }
     if (endDate) {
-      transactions = transactions.filter(txn => 
+      transactions = transactions.filter(txn =>
         txn.BookingDateTime.split('T')[0] <= endDate
       );
     }
-    
+
     // Apply pagination
     const totalCount = transactions.length;
     const startIndex = offset ? parseInt(offset) : 0;
     const endIndex = limit ? startIndex + parseInt(limit) : transactions.length;
     const paginatedTransactions = transactions.slice(startIndex, endIndex);
-    
+
     res.json({
       success: true,
       data: {
@@ -155,35 +174,35 @@ app.get('/products', (req, res) => {
     // Optional query parameters for filtering
     const { type, minAmount, maxAmount, maxRate } = req.query;
     let products = [...mockProducts];
-    
+
     // Filter by product type if provided
     if (type) {
-      products = products.filter(product => 
+      products = products.filter(product =>
         product.ProductType.toLowerCase() === type.toLowerCase()
       );
     }
-    
+
     // Filter by minimum loan amount if provided
     if (minAmount) {
-      products = products.filter(product => 
+      products = products.filter(product =>
         product.LoanDetails && product.LoanDetails.MinAmount <= parseInt(minAmount)
       );
     }
-    
+
     // Filter by maximum loan amount if provided
     if (maxAmount) {
-      products = products.filter(product => 
+      products = products.filter(product =>
         product.LoanDetails && product.LoanDetails.MaxAmount >= parseInt(maxAmount)
       );
     }
-    
+
     // Filter by maximum interest rate if provided
     if (maxRate) {
-      products = products.filter(product => 
+      products = products.filter(product =>
         parseFloat(product.InterestRate.Rate) <= parseFloat(maxRate)
       );
     }
-    
+
     res.json({
       success: true,
       data: products,
@@ -204,7 +223,7 @@ app.get('/products/:productId', (req, res) => {
   try {
     const { productId } = req.params;
     const product = mockProducts.find(prod => prod.ProductId === productId);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -212,7 +231,7 @@ app.get('/products/:productId', (req, res) => {
         message: `Product with ID ${productId} does not exist`
       });
     }
-    
+
     res.json({
       success: true,
       data: product,
