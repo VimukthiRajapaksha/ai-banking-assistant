@@ -246,17 +246,17 @@ export default function ChatPage() {
           <div className="whatsapp-chat-list">
             <div className="whatsapp-chat-item active">
               <div className="whatsapp-chat-avatar">
-                NB
+                FB
               </div>
               <div className="whatsapp-chat-info">
                 <div className="whatsapp-chat-header">
-                  <div className="whatsapp-chat-name">Nexora Bank Assistant</div>
+                  <div className="whatsapp-chat-name">Finthesis Bank Assistant</div>
                   <div className="whatsapp-chat-time">
                     {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
                 <div className="whatsapp-chat-preview">
-                  Welcome to Nexora Bank! Hi! I'm your personal...
+                  Welcome to Finthesis Bank! Hi! I'm your personal...
                 </div>
               </div>
             </div>
@@ -268,11 +268,11 @@ export default function ChatPage() {
           {/* Chat Header */}
           <div className="whatsapp-chat-header-main">
             <div className="whatsapp-contact-avatar">
-              NB
+              FB
               <div className="whatsapp-online-dot"></div>
             </div>
             <div className="whatsapp-contact-info">
-              <div className="whatsapp-contact-name">Nexora Bank Assistant</div>
+              <div className="whatsapp-contact-name">Finthesis Bank Assistant</div>
               <div className="whatsapp-contact-status">Online</div>
             </div>
             <div className="whatsapp-chat-actions">

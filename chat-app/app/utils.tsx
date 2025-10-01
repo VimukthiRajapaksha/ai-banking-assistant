@@ -58,7 +58,7 @@ export const clearMessagesFromStorage = () => {
 // Function to generate greeting message based on session state
 export const getGreetingMessageContent = (): string => {
     // Always show the welcome message for first-time visitors
-    return `# Welcome to Nexora Bank! 👋
+    return `# Welcome to Finthesis Bank! 👋
 <br>
 Hi! I'm your personal banking assistant. To help you with your questions about accounts, check balances, and track spending, please sign in securely with your bank.
 
