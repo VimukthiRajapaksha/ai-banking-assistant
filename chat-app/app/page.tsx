@@ -1,3 +1,16 @@
+// Copyright (c) 2025 WSO2 LLC (http://www.wso2.com).
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 "use client"
 
 import type React from "react"
@@ -7,58 +20,18 @@ import { Send, LogOut, Search, MoreVertical, Phone, Video } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import Cookies from 'js-cookie';
-
-interface Message {
-  id: string
-  content: string
-  sender: "user" | "agent"
-  timestamp: Date
-}
+import { getErrorMessageFromCode, getGreetingMessageContent, Message, postChatRequest, saveMessagesToStorage, loadMessagesFromStorage, clearMessagesFromStorage } from "./utils"
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [hasWelcomeBackMessage, setHasWelcomeBackMessage] = useState(false)
   const [sessionId,] = useState(() => Cookies.get('session_id') || "")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Function to save messages to localStorage
-  const saveMessagesToStorage = (messages: Message[]) => {
-    try {
-      localStorage.setItem('chat-messages', JSON.stringify(messages))
-    } catch (error) {
-      console.error('Failed to save messages to localStorage:', error)
-    }
-  }
-
-  // Function to load messages from localStorage
-  const loadMessagesFromStorage = (): Message[] => {
-    try {
-      const saved = localStorage.getItem('chat-messages')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Convert timestamp strings back to Date objects
-        return parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to load messages from localStorage:', error)
-    }
-    return []
-  }
-
-  // Function to clear messages from storage
-  const clearMessagesFromStorage = () => {
-    try {
-      localStorage.removeItem('chat-messages')
-    } catch (error) {
-      console.error('Failed to clear messages from localStorage:', error)
-    }
-  }
 
   // Add global function for bank sign-in
   const handleSignIn = () => {
@@ -68,24 +41,13 @@ export default function ChatPage() {
       sender: "agent",
       timestamp: new Date(),
     };
-    const updatedMessages = [...messages, redirectionMessage]
-    setMessages(updatedMessages)
-    saveMessagesToStorage(updatedMessages)
+    setMessages(prevMessages => {
+      const updatedMessages = [...prevMessages, redirectionMessage]
+      saveMessagesToStorage(updatedMessages)
+      return updatedMessages
+    })
     // Redirect to the OAuth initiation endpoint
     window.location.href = "/api/auth/login"
-  }
-
-  // Function to add welcome back message after successful login
-  const addWelcomeBackMessage = () => {
-    const welcomeBackMessage: Message = {
-      id: "3",
-      content: generateWelcomeBackMessage(),
-      sender: "agent",
-      timestamp: new Date(),
-    }
-    const updatedMessages = [...messages, welcomeBackMessage]
-    setMessages(updatedMessages)
-    saveMessagesToStorage(updatedMessages)
   }
 
   // Add function for bank sign-out
@@ -103,97 +65,30 @@ export default function ChatPage() {
     const errorParam = params.get("error")
 
     if (errorParam) {
-      let errorDescription = "An authentication error occurred."
-
-      switch (errorParam) {
-        case "invalid_state":
-          errorDescription = "Authentication state validation failed. This usually happens when cookies are blocked or the login process took too long. Please try again."
-          break
-        case "no_code":
-          errorDescription = "No authorization code received from the authentication server."
-          break
-        case "missing_auth_data":
-          errorDescription = "Required authentication data is missing. Please try logging in again."
-          break
-        case "auth_failed":
-          errorDescription = "Authentication failed. Please try again."
-          break
-        case "auth_init_failed":
-          errorDescription = "Failed to initialize authentication. Please try again."
-          break
-        default:
-          errorDescription = `Authentication error: ${errorParam}`
-      }
-
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: `I'm sorry, I'm having trouble connecting right now. ${errorDescription}`,
+        content: `I'm sorry, I'm having trouble connecting right now. ${getErrorMessageFromCode(errorParam)}`,
         sender: "agent",
         timestamp: new Date(),
       }
-      const updatedMessages = [...messages, errorMessage]
-      setMessages(updatedMessages)
-      saveMessagesToStorage(updatedMessages)
+      setMessages(prevMessages => {
+        const updatedMessages = [...prevMessages, errorMessage]
+        saveMessagesToStorage(updatedMessages)
+        return updatedMessages
+      })
     }
-  }, [])
-
-  // Effect to handle successful login and add welcome back message
-  useEffect(() => {
-    // Check if user just logged in (has sessionId but no welcome back message yet)
-    if (sessionId && messages.length > 0) {
-      const hasWelcomeBackMessage = messages.some(msg => 
-        msg.content.includes("Thanks for signing in!")
-      )
-      
-      // Only add welcome back message if user just logged in
-      if (!hasWelcomeBackMessage) {
-        // Small delay to ensure the page has settled after redirect
-        setTimeout(() => {
-          addWelcomeBackMessage()
-        }, 500)
-      }
-    }
-  }, [sessionId, messages])
-
-
-//   return `# Hey there! 👋
-// <br>
-// I'm your personal banking buddy! I can help you check balances, track spending, and answer questions about your accounts. 
-
-// Just need to get you signed in first so I can access your info securely 😊
-
-
-
-  // Function to generate greeting message based on session state
-  const generateGreetingMessage = (): string => {
-    // Always show the welcome message for first-time visitors
-    return `# Welcome to Family Bank! 👋
-<br>
-Hi! I'm your personal banking assistant. To help you with your questions about accounts, check balances, and track spending, please sign in securely with your bank.
-
-<div style="text-align: center; margin: 24px 0;">
-  <button class="whatsapp-signin-button" onclick="handleSignIn()">
-    🏦 Sign in with Bank
-  </button>
-</div>
-
-> Your data is secure & encrypted 🔐`
-  }
+  }, []);
 
   // Function to generate welcome back message for authenticated users
-  const generateWelcomeBackMessage = (): string => {
-    return `# Thanks for signing in! 🎉
-<br>
-Great! Now I can help you with your banking needs.
-<br><br>
+  const generateWelcomeBackMessage = (): void => {
+    const inputMessage: string = "Generate a short WhatsApp‑style 'welcome back' message for me with three sections. " +
+      "Fetch my accounts and recent transactions through your tools first. " +
+      "1. Greet me by first name. 2. Give a quick snapshot section (balances + upcoming recurring payments), " +
+      "3. Then based on the retrieved data suggest 3-4 personalized read-only follow-up questions section I could ask next. " +
+      "Keep it friendly, concise, and only use real data you retrieved. Always end by asking if I need anything else.";
 
-**Try asking:**
-- "What's my savings account balance?" 💰  
-- "How much did I spend on eating out last month?" 🍽️  
-- "I have a recurring payment of $15.99. What is it?" 🔄  
-- "Show me my largest expenses this week" 📊  
-`
-  }
+    getAgentReplyForMessage(inputMessage, sessionId);
+  };
 
   // Initialize banking agent and then show greeting
   useEffect(() => {
@@ -205,21 +100,9 @@ Great! Now I can help you with your banking needs.
       setMessages(savedMessages)
       
       // If user is logged in and we don't have a welcome back message, add it
-      if (sessionId) {
-        const hasWelcomeBackMessage = savedMessages.some(msg => 
-          msg.content.includes("Thanks for signing in!")
-        )
-        if (!hasWelcomeBackMessage) {
-          const welcomeBackMessage: Message = {
-            id: "3",
-            content: generateWelcomeBackMessage(),
-            sender: "agent",
-            timestamp: new Date(),
-          }
-          const updatedMessages = [...savedMessages, welcomeBackMessage]
-          setMessages(updatedMessages)
-          saveMessagesToStorage(updatedMessages)
-        }
+      if (sessionId && !hasWelcomeBackMessage) {
+          generateWelcomeBackMessage();
+          setHasWelcomeBackMessage(true);
       }
     } else {
       // If no saved messages, create the initial greeting (always show welcome message first)
@@ -232,26 +115,20 @@ Great! Now I can help you with your banking needs.
 
       const greetingMessage: Message = {
         id: "2",
-        content: generateGreetingMessage(),
+        content: getGreetingMessageContent(),
         sender: "agent",
         timestamp: new Date(),
       };
 
-      let initialMessages = [hiMessage, greetingMessage]
-      
-      // If user is already logged in on first visit, add welcome back message
-      if (sessionId) {
-        const welcomeBackMessage: Message = {
-          id: "3",
-          content: generateWelcomeBackMessage(),
-          sender: "agent",
-          timestamp: new Date(),
-        }
-        initialMessages = [...initialMessages, welcomeBackMessage]
-      }
-
+      const initialMessages = [hiMessage, greetingMessage]
       setMessages(initialMessages)
       saveMessagesToStorage(initialMessages)
+
+      // If user is already logged in on first visit, add welcome back message
+      if (sessionId && !hasWelcomeBackMessage) {
+        generateWelcomeBackMessage();
+        setHasWelcomeBackMessage(true);
+      }
     }
   }, [])
 
@@ -267,70 +144,64 @@ Great! Now I can help you with your banking needs.
     return () => clearTimeout(timeoutId)
   }, [messages])
 
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return
-
+  const sendMessage = (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage,
+      content,
       sender: "user",
       timestamp: new Date(),
     }
 
-    const updatedMessagesWithUser = [...messages, userMessage]
-    setMessages(updatedMessagesWithUser)
-    saveMessagesToStorage(updatedMessagesWithUser)
-    setInputMessage("")
-    setIsLoading(true)
+    setMessages(prevMessages => {
+      const updatedMessages = [...prevMessages, userMessage]
+      saveMessagesToStorage(updatedMessages)
+      return updatedMessages
+    })
+    
+    // Get agent reply
+    getAgentReplyForMessage(content, sessionId)
+  }
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: inputMessage,
-          sessionId: sessionId,
-        }),
+  const getAgentReplyForMessage = async (inputMessage: string, sessionId: string) => {
+    setIsLoading(true);
+    postChatRequest(inputMessage, sessionId)
+      .then(agentMessage => {
+        console.log("Agent message received:", agentMessage);
+        setMessages(prevMessages => {
+          const updatedMessages = [...prevMessages, agentMessage]
+          saveMessagesToStorage(updatedMessages)
+          return updatedMessages
+        })
       })
+      .catch(error => {
+        console.error("Error sending message:", error)
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+          sender: "agent",
+          timestamp: new Date(),
+        };
+        setMessages(prevMessages => {
+          const updatedMessages = [...prevMessages, errorMessage]
+          saveMessagesToStorage(updatedMessages)
+          return updatedMessages
+        })
+      }).finally(() => {
+        setIsLoading(false)
+      });
+  }
 
-      if (!response.ok) {
-        throw new Error("Failed to send message")
-      }
-
-      const data = await response.json()
-
-      const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.response || "I apologize, but I encountered an error processing your request.",
-        sender: "agent",
-        timestamp: new Date(),
-      }
-
-      const finalMessages = [...updatedMessagesWithUser, agentMessage]
-      setMessages(finalMessages)
-      saveMessagesToStorage(finalMessages)
-    } catch (error) {
-      console.error("Error sending message:", error)
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
-        sender: "agent",
-        timestamp: new Date(),
-      }
-      const finalMessages = [...updatedMessagesWithUser, errorMessage]
-      setMessages(finalMessages)
-      saveMessagesToStorage(finalMessages)
-    } finally {
-      setIsLoading(false)
+  const handleSendMessage = () => {
+    if (inputMessage.trim() && !isLoading) {
+      sendMessage(inputMessage.trim())
+      setInputMessage("")
     }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      handleSendMessage()
     }
   }
 
@@ -375,17 +246,17 @@ Great! Now I can help you with your banking needs.
           <div className="whatsapp-chat-list">
             <div className="whatsapp-chat-item active">
               <div className="whatsapp-chat-avatar">
-                FB
+                NB
               </div>
               <div className="whatsapp-chat-info">
                 <div className="whatsapp-chat-header">
-                  <div className="whatsapp-chat-name">Family Bank Assistant</div>
+                  <div className="whatsapp-chat-name">Nexora Bank Assistant</div>
                   <div className="whatsapp-chat-time">
                     {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
                 <div className="whatsapp-chat-preview">
-                  Welcome to Family Bank! How can I help...
+                  Welcome to Nexora Bank! Hi! I'm your personal...
                 </div>
               </div>
             </div>
@@ -397,11 +268,11 @@ Great! Now I can help you with your banking needs.
           {/* Chat Header */}
           <div className="whatsapp-chat-header-main">
             <div className="whatsapp-contact-avatar">
-              FB
+              NB
               <div className="whatsapp-online-dot"></div>
             </div>
             <div className="whatsapp-contact-info">
-              <div className="whatsapp-contact-name">Family Bank Assistant</div>
+              <div className="whatsapp-contact-name">Nexora Bank Assistant</div>
               <div className="whatsapp-contact-status">Online</div>
             </div>
             <div className="whatsapp-chat-actions">
@@ -482,7 +353,7 @@ Great! Now I can help you with your banking needs.
             </div>
             <button
               className="whatsapp-send-button"
-              onClick={sendMessage}
+              onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
             >
               <Send size={20} />
