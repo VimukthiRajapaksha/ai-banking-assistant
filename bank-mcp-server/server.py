@@ -23,6 +23,7 @@ from typing_extensions import Annotated
 
 from client import HTTPClient
 from config import ServerConfigs
+from utils import build_request_headers
 
 logger = logging.getLogger(__name__)
 
@@ -76,14 +77,7 @@ async def get_accounts(
     if sub_resource:
         accounts_url += f"/{sub_resource}"
 
-    headers: dict[str, str] = {}
-    
-    # Only add Authorization header if x-forwarded-authorization is present
-    auth_token = ctx.request_context.request.headers.get('x-forwarded-authorization')
-    if auth_token:
-        headers["Authorization"] = f"Bearer {auth_token}"
-    if configs.server_api_key:
-        headers["api-key"] = configs.server_api_key
+    headers = build_request_headers(ctx, configs)
 
     logger.info(f"Fetching accounts from URL: {accounts_url} with headers: {headers}")
     return http_client.get(url=accounts_url, headers=headers)
@@ -125,16 +119,42 @@ def get_products(
     if product_id:
         products_url += f"/{product_id}"
 
-    headers: dict[str, str] = {}
-    
-    # Only add Authorization header if x-forwarded-authorization is present
-    auth_token = ctx.request_context.request.headers.get('x-forwarded-authorization')
-    if auth_token:
-        headers["Authorization"] = f"Bearer {auth_token}"
-    if configs.server_api_key:
-        headers["api-key"] = configs.server_api_key
+    headers = build_request_headers(ctx, configs)
 
     logger.info(
         f"Fetching products from URL: {products_url} with headers: {headers}"
     )
     return http_client.get(url=products_url, headers=headers)
+
+
+@mcp.tool(
+    description=(
+        "Gets the current authenticated user's complete profile and personal information. "
+        "Use this tool when you need the user's name, contact details, financial status, "
+        "employment information, or banking preferences to personalize responses or provide tailored advice. "
+        "DO NOT use this tool for account balances, transactions, or for general banking product information."
+    )
+)
+def get_user_profile(
+    ctx: Context,
+) -> Annotated[
+    Dict,
+    Field(
+        description=(
+            "Complete user profile information including: "
+            "- Personal details (name, date of birth, contact information) "
+            "- Employment and financial status (income, credit score, assets) "
+            "- Banking relationship details (customer segment, preferences) "
+            "- Account summary (total balances, available credit) "
+            "- Verification and compliance status "
+            "- Communication preferences and settings"
+        )
+    ),
+]:
+    """Fetch user profile information from the /me endpoint."""
+    user_url: str = configs.server_url.rstrip("/") + "/me"
+
+    headers = build_request_headers(ctx, configs)
+
+    logger.info(f"Fetching user profile from URL: {user_url} with headers: {headers}")
+    return http_client.get(url=user_url, headers=headers)
