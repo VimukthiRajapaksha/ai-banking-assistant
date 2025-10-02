@@ -1,4 +1,4 @@
-import { getCurrentTime, getDaysAgo } from './utils.js';
+import { getCurrentTime, getDaysAgo, getDaysFromNow } from './utils.js';
 
 // Mock data for banking accounts
 export const mockAccounts = [
@@ -242,6 +242,11 @@ export const mockAccounts = [
     "Nickname": "Platinum Credit Card",
     "OpeningDate": "2021-06-15",
     "MaturityDate": "2026-06-15",
+    "PaymentDueDate": getDaysFromNow(13),
+    "MinimumPaymentAmount": {
+      "Amount": "50.00",
+      "Currency": "USD"
+    },
     "Balance": [
       {
         "AccountId": "acc-003",
