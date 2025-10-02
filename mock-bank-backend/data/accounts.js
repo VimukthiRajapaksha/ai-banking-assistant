@@ -1,28 +1,16 @@
-// Mock data for UK Open Banking accounts
-const mockAccounts = [
+import { getCurrentTime, getDaysAgo } from './utils.js';
+
+// Mock data for banking accounts
+export const mockAccounts = [
   {
     "AccountId": "acc-001",
     "Status": "Enabled",
-    "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
+    "StatusUpdateDateTime": getDaysAgo(3),
     "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "CurrentAccount",
     "Nickname": "Primary Current Account",
     "OpeningDate": "2020-01-15",
-    "MaturityDate": null,
-    "SwitchStatus": "NotSwitched",
-    "Account": [
-      {
-        "SchemeName": "UK.OBIE.SortCodeAccountNumber",
-        "Identification": "12345678901234",
-        "Name": "Mr John Smith",
-        "SecondaryIdentification": "00021"
-      }
-    ],
-    "Servicer": {
-      "SchemeName": "UK.OBIE.BICFI",
-      "Identification": "NWBKGB2L"
-    },
     "Balance": [
       {
         "AccountId": "acc-001",
@@ -32,7 +20,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
-        "DateTime": "2025-09-23T08:00:00+00:00",
+        "DateTime": getCurrentTime(),
         "CreditLine": [
           {
             "Included": true,
@@ -52,7 +40,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimBooked",
-        "DateTime": "2025-09-23T08:00:00+00:00"
+        "DateTime": getCurrentTime()
       }
     ],
     "Transactions": [
@@ -66,8 +54,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-22T14:30:00+00:00",
-        "ValueDateTime": "2025-09-22T14:30:00+00:00",
+        "BookingDateTime": getDaysAgo(1),
+        "ValueDateTime": getDaysAgo(1),
         "TransactionInformation": "Coffee Shop Purchase",
         "BankTransactionCode": {
           "Code": "ReceivedCreditTransfer",
@@ -100,8 +88,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-21T09:00:00+00:00",
-        "ValueDateTime": "2025-09-21T09:00:00+00:00",
+        "BookingDateTime": getDaysAgo(2),
+        "ValueDateTime": getDaysAgo(2),
         "TransactionInformation": "Salary Deposit",
         "BankTransactionCode": {
           "Code": "ReceivedCreditTransfer",
@@ -131,8 +119,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-20T16:45:00+00:00",
-        "ValueDateTime": "2025-09-20T16:45:00+00:00",
+        "BookingDateTime": getDaysAgo(3),
+        "ValueDateTime": getDaysAgo(3),
         "TransactionInformation": "Grocery Store",
         "BankTransactionCode": {
           "Code": "IssuedCreditTransfer",
@@ -156,26 +144,12 @@ const mockAccounts = [
   {
     "AccountId": "acc-002",
     "Status": "Enabled",
-    "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
+    "StatusUpdateDateTime": getDaysAgo(2),
     "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "Savings",
     "Nickname": "High Yield Savings",
     "OpeningDate": "2020-03-01",
-    "MaturityDate": null,
-    "SwitchStatus": "NotSwitched",
-    "Account": [
-      {
-        "SchemeName": "UK.OBIE.SortCodeAccountNumber",
-        "Identification": "12345678905678",
-        "Name": "Mr John Smith",
-        "SecondaryIdentification": "00022"
-      }
-    ],
-    "Servicer": {
-      "SchemeName": "UK.OBIE.BICFI",
-      "Identification": "NWBKGB2L"
-    },
     "Balance": [
       {
         "AccountId": "acc-002",
@@ -185,7 +159,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
-        "DateTime": "2025-09-23T08:00:00+00:00"
+        "DateTime": getCurrentTime(),
       },
       {
         "AccountId": "acc-002",
@@ -195,7 +169,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimBooked",
-        "DateTime": "2025-09-23T08:00:00+00:00"
+        "DateTime": getCurrentTime(),
       }
     ],
     "Transactions": [
@@ -209,8 +183,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-20T23:59:00+00:00",
-        "ValueDateTime": "2025-09-20T23:59:00+00:00",
+        "BookingDateTime": getDaysAgo(4),
+        "ValueDateTime": getDaysAgo(4),
         "TransactionInformation": "Interest Payment",
         "BankTransactionCode": {
           "Code": "ReceivedCreditTransfer",
@@ -235,8 +209,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-15T10:30:00+00:00",
-        "ValueDateTime": "2025-09-15T10:30:00+00:00",
+        "BookingDateTime": getDaysAgo(2),
+        "ValueDateTime": getDaysAgo(2),
         "TransactionInformation": "Transfer from Current Account",
         "BankTransactionCode": {
           "Code": "ReceivedCreditTransfer",
@@ -261,25 +235,13 @@ const mockAccounts = [
   {
     "AccountId": "acc-003",
     "Status": "Enabled",
-    "StatusUpdateDateTime": "2025-09-20T10:00:00+00:00",
+    "StatusUpdateDateTime": getDaysAgo(3),
     "Currency": "USD",
     "AccountType": "Personal",
     "AccountSubType": "CreditCard",
     "Nickname": "Platinum Credit Card",
     "OpeningDate": "2021-06-15",
     "MaturityDate": "2026-06-15",
-    "SwitchStatus": "NotSwitched",
-    "Account": [
-      {
-        "SchemeName": "UK.OBIE.PAN",
-        "Identification": "************9012",
-        "Name": "Mr John Smith"
-      }
-    ],
-    "Servicer": {
-      "SchemeName": "UK.OBIE.BICFI",
-      "Identification": "PCUGB2L"
-    },
     "Balance": [
       {
         "AccountId": "acc-003",
@@ -289,7 +251,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Debit",
         "Type": "InterimBooked",
-        "DateTime": "2025-09-23T08:00:00+00:00",
+        "DateTime": getCurrentTime(),
         "CreditLine": [
           {
             "Included": true,
@@ -309,7 +271,7 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Type": "InterimAvailable",
-        "DateTime": "2025-09-23T08:00:00+00:00"
+        "DateTime": getCurrentTime()
       }
     ],
     "Transactions": [
@@ -323,8 +285,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-22T11:20:00+00:00",
-        "ValueDateTime": "2025-09-22T11:20:00+00:00",
+        "BookingDateTime": getDaysAgo(1),
+        "ValueDateTime": getDaysAgo(1),
         "TransactionInformation": "Online Shopping",
         "BankTransactionCode": {
           "Code": "CustomerCardTransaction",
@@ -353,8 +315,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Debit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-21T19:30:00+00:00",
-        "ValueDateTime": "2025-09-21T19:30:00+00:00",
+        "BookingDateTime": getDaysAgo(2),
+        "ValueDateTime": getDaysAgo(2),
         "TransactionInformation": "Restaurant",
         "BankTransactionCode": {
           "Code": "CustomerCardTransaction",
@@ -383,8 +345,8 @@ const mockAccounts = [
         },
         "CreditDebitIndicator": "Credit",
         "Status": "Booked",
-        "BookingDateTime": "2025-09-20T14:00:00+00:00",
-        "ValueDateTime": "2025-09-20T14:00:00+00:00",
+        "BookingDateTime": getDaysAgo(5),
+        "ValueDateTime": getDaysAgo(5),
         "TransactionInformation": "Payment Received",
         "BankTransactionCode": {
           "Code": "ReceivedCreditTransfer",
@@ -402,7 +364,3 @@ const mockAccounts = [
     ]
   }
 ];
-
-module.exports = mockAccounts;
-
-module.exports = mockAccounts;

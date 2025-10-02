@@ -1,5 +1,7 @@
+import { getCurrentTime, getLastDayOfCurrentMonth } from './utils.js';
+
 // Mock user profile data for banking customer
-const mockUser = {
+export const mockUser = {
   personalInfo: {
     customerId: "CUST_12345678",
     title: "Mr",
@@ -44,11 +46,34 @@ const mockUser = {
     yearsWithEmployer: 5,
     annualIncome: 120000,
     incomeFrequency: "Annual",
-    nextPayDate: "2025-10-15"
+    nextPayDate: getLastDayOfCurrentMonth()
+  },
+  summary: {
+    liquidFunds: 18601.00, 
+    totalInvestments: 0.00, 
+    totalLiabilities: 1254.70, 
+    netPosition: 17346.30, 
+    breakdown: {
+      assets: {
+        currentAccount: 2850.75, 
+        savingsAccount: 15750.25, 
+        fixedDeposits: 0.00,
+        stockPortfolio: 0.00,
+        mutualFunds: 0.00,
+        bonds: 0.00
+      },
+      liabilities: {
+        creditCardBalance: 1254.70, 
+        personalLoan: 0.00,
+        carLoan: 0.00,
+        mortgage: 0.00
+      }
+    },
+    lastCalculated: getCurrentTime()
   },
   financialProfile: {
     creditScore: 750,
-    creditScoreDate: "2025-09-15",
+    creditScoreDate: getCurrentTime(),
     riskCategory: "Low",
     totalAssets: 250000,
     totalLiabilities: 180000,
@@ -100,5 +125,3 @@ const mockUser = {
     accessLevel: "Full"
   }
 };
-
-module.exports = mockUser;

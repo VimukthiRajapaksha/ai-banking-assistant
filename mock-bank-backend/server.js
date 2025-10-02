@@ -1,10 +1,10 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
 
 // Import mock data from external files
-const mockAccounts = require('./data/accounts');
-const mockProducts = require('./data/products');
-const mockUser = require('./data/user');
+import { mockAccounts } from './data/accounts.js';
+import { mockProducts } from './data/products.js';
+import { mockUser } from './data/user.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -269,4 +269,4 @@ app.listen(PORT, HOST, () => {
   console.log(`🚀 Mock Banking API Server running on http://${HOST}:${PORT}`)
 });
 
-module.exports = app;
+export default app;

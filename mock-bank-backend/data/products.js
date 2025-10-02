@@ -1,7 +1,7 @@
 // Mock data for UK Open Banking products (loans and interest rates)
-const mockProducts = [
+export const mockProducts = [
   {
-    "ProductId": "loan-001",
+    "ProductId": "personal-loan-standard",
     "ProductType": "PersonalLoan",
     "MarketingState": "Regular",
     "ProductName": "Personal Loan",
@@ -56,7 +56,7 @@ const mockProducts = [
     ]
   },
   {
-    "ProductId": "loan-002",
+    "ProductId": "car-loan-secured",
     "ProductType": "CarLoan",
     "MarketingState": "Regular",
     "ProductName": "Car Loan",
@@ -121,7 +121,7 @@ const mockProducts = [
     ]
   },
   {
-    "ProductId": "loan-003",
+    "ProductId": "mortgage-residential-variable",
     "ProductType": "Mortgage",
     "MarketingState": "Regular",
     "ProductName": "Residential Mortgage",
@@ -185,7 +185,7 @@ const mockProducts = [
     ]
   },
   {
-    "ProductId": "loan-004",
+    "ProductId": "home-improvement-unsecured",
     "ProductType": "HomeImprovementLoan",
     "MarketingState": "Regular",
     "ProductName": "Home Improvement Loan",
@@ -242,7 +242,7 @@ const mockProducts = [
     ]
   },
   {
-    "ProductId": "loan-005",
+    "ProductId": "business-loan-sme-variable",
     "ProductType": "BusinessLoan",
     "MarketingState": "Regular",
     "ProductName": "Small Business Loan",
@@ -300,5 +300,3 @@ const mockProducts = [
     ]
   }
 ];
-
-module.exports = mockProducts;
