@@ -17,7 +17,7 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Nexora Bank Assistant',
+  title: 'Finthesis Bank Assistant',
   description: 'Your personal banking assistant - secure, reliable banking help.',
   generator: 'Next.js',
   icons: {

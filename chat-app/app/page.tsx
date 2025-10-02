@@ -71,11 +71,12 @@ export default function ChatPage() {
         sender: "agent",
         timestamp: new Date(),
       }
-      setMessages(prevMessages => {
-        const updatedMessages = [...prevMessages, errorMessage]
-        saveMessagesToStorage(updatedMessages)
-        return updatedMessages
-      })
+
+      // Load existing messages first, then add error message
+      const existingMessages = loadMessagesFromStorage()
+      const updatedMessages = [...existingMessages, errorMessage]
+      setMessages(updatedMessages)
+      saveMessagesToStorage(updatedMessages)
     }
   }, []);
 
@@ -83,7 +84,13 @@ export default function ChatPage() {
   const generateWelcomeBackMessage = (): void => {
     const inputMessage: string = "Generate a short WhatsApp‑style 'welcome back' message for me with three sections. " +
       "Fetch my accounts and recent transactions through your tools first. " +
-      "1. Greet me by first name. 2. Give a quick snapshot section (balances + upcoming recurring payments), " +
+      "1. Greet me by first name. " + 
+      "2. Give a quick snapshot section with following details: " +
+      " - Liquid Funds: Sum of Current and Savings Accounts " +
+      " - Total Investments: Sum of all investment accounts (FDs, TDs, Stock Portfolios etc) " +
+      " - Total Liabilities: Sum of all loans, credit " +
+      " - Net position: Net of Total Assets (Funds+Investments) and Total Liabilities " +
+      " - Credit Score: Credit score if available " +
       "3. Then based on the retrieved data suggest 3-4 personalized read-only follow-up questions section I could ask next. " +
       "Keep it friendly, concise, and only use real data you retrieved. Always end by asking if I need anything else.";
 
@@ -98,14 +105,14 @@ export default function ChatPage() {
     if (savedMessages.length > 0) {
       // If we have saved messages, use them
       setMessages(savedMessages)
-      
+
       // If user is logged in and we don't have a welcome back message, add it
       if (sessionId && !hasWelcomeBackMessage) {
-          generateWelcomeBackMessage();
-          setHasWelcomeBackMessage(true);
+        generateWelcomeBackMessage();
+        setHasWelcomeBackMessage(true);
       }
     } else {
-      // If no saved messages, create the initial greeting (always show welcome message first)
+      // Only create initial greeting if there's no error (error handling will create its own messages)
       const hiMessage: Message = {
         id: "1",
         content: "Hi!",
@@ -157,7 +164,7 @@ export default function ChatPage() {
       saveMessagesToStorage(updatedMessages)
       return updatedMessages
     })
-    
+
     // Get agent reply
     getAgentReplyForMessage(content, sessionId)
   }
