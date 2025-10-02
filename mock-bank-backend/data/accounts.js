@@ -367,5 +367,82 @@ export const mockAccounts = [
         }
       }
     ]
+  },
+  {
+    "AccountId": "acc-004",
+    "Status": "Enabled",
+    "StatusUpdateDateTime": getDaysAgo(5),
+    "Currency": "USD",
+    "AccountType": "Personal",
+    "AccountSubType": "Mortgage",
+    "Nickname": "Home Mortgage",
+    "OpeningDate": "2022-05-15",
+    "MaturityDate": "2052-05-15",
+    "PaymentDueDate": getDaysFromNow(28),
+    "MonthlyPaymentAmount": {
+      "Amount": "1200.00",
+      "Currency": "USD"
+    },
+    "Balance": [
+      {
+        "AccountId": "acc-004",
+        "Amount": {
+          "Amount": "80000.00",
+          "Currency": "USD"
+        },
+        "CreditDebitIndicator": "Debit",
+        "Type": "InterimBooked",
+        "DateTime": getCurrentTime(),
+        "InterestRate": {
+          "Rate": "4.25",
+          "Type": "Fixed"
+        }
+      }
+    ],
+    "LoanDetails": {
+      "OriginalAmount": "320000.00",
+      "RemainingTerm": "15 years",
+      "InterestRate": "4.25%",
+      "LoanType": "Fixed Rate Mortgage"
+    }
+  },
+  {
+    "AccountId": "acc-005",
+    "Status": "Enabled",
+    "StatusUpdateDateTime": getDaysAgo(2),
+    "Currency": "USD",
+    "AccountType": "Personal",
+    "AccountSubType": "CarLoan",
+    "Nickname": "Tesla Model 3 Loan",
+    "OpeningDate": "2023-08-20",
+    "MaturityDate": "2028-08-20",
+    "PaymentDueDate": getDaysFromNow(18),
+    "MonthlyPaymentAmount": {
+      "Amount": "285.00",
+      "Currency": "USD"
+    },
+    "Balance": [
+      {
+        "AccountId": "acc-005",
+        "Amount": {
+          "Amount": "12000.00",
+          "Currency": "USD"
+        },
+        "CreditDebitIndicator": "Debit",
+        "Type": "InterimBooked",
+        "DateTime": getCurrentTime(),
+        "InterestRate": {
+          "Rate": "3.99",
+          "Type": "Fixed"
+        }
+      }
+    ],
+    "LoanDetails": {
+      "OriginalAmount": "35000.00",
+      "RemainingTerm": "2 years 5 months",
+      "InterestRate": "3.99%",
+      "LoanType": "Auto Loan",
+      "Collateral": "2023 Tesla Model 3"
+    }
   }
 ];

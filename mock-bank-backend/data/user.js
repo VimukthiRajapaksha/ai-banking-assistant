@@ -49,24 +49,24 @@ export const mockUser = {
     nextPayDate: getLastDayOfCurrentMonth()
   },
   summary: {
-    liquidFunds: 18601.00, 
-    totalInvestments: 0.00, 
-    totalLiabilities: 1254.70, 
-    netPosition: 17346.30, 
+    liquidFunds: 18601.00,
+    totalInvestments: 85000.00,
+    totalLiabilities: 93254.70,
+    netPosition: 10346.30,
     breakdown: {
       assets: {
-        currentAccount: 2850.75, 
-        savingsAccount: 15750.25, 
-        fixedDeposits: 0.00,
-        stockPortfolio: 0.00,
-        mutualFunds: 0.00,
-        bonds: 0.00
+        currentAccount: 2850.75,
+        savingsAccount: 15750.25,
+        fixedDeposits: 25000.00,
+        stockPortfolio: 35000.00,
+        mutualFunds: 15000.00,
+        bonds: 10000.00
       },
       liabilities: {
-        creditCardBalance: 1254.70, 
+        creditCardBalance: 1254.70,
         personalLoan: 0.00,
-        carLoan: 0.00,
-        mortgage: 0.00
+        carLoan: 12000.00,
+        mortgage: 80000.00
       }
     },
     lastCalculated: getCurrentTime()
@@ -75,9 +75,9 @@ export const mockUser = {
     creditScore: 750,
     creditScoreDate: getCurrentTime(),
     riskCategory: "Low",
-    totalAssets: 250000,
-    totalLiabilities: 180000,
-    netWorth: 70000,
+    totalAssets: 103601,
+    totalLiabilities: 93255,
+    netWorth: 10346,
     monthlyExpenses: 4500
   },
   bankingRelationship: {
@@ -86,8 +86,8 @@ export const mockUser = {
     relationshipManager: "Sarah Johnson",
     branchPreference: "Downtown Branch",
     lastLoginDate: "2025-10-01T10:30:00Z",
-    accountsCount: 3,
-    activeProductsCount: 5
+    accountsCount: 5,
+    activeProductsCount: 7
   },
   preferences: {
     statementDelivery: "Electronic",
