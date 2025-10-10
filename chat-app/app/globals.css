@@ -478,6 +478,12 @@
   gap: 8px;
 }
 
+.whatsapp-input-area .whatsapp-icon-button {
+  height: 42px;
+  width: 42px;
+}
+
+
 .whatsapp-input-container {
   flex: 1;
   background: var(--whatsapp-bg-white);
@@ -507,8 +513,8 @@
 }
 
 .whatsapp-send-button {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   background: var(--whatsapp-primary);
   border: none;
   border-radius: 50%;

@@ -108,6 +108,7 @@ export const getAuthorizationUrl = (params: {
     url.searchParams.append("scope", process.env.OB_CLIENT_SCOPES ?? "");
     url.searchParams.append("state", params.state);
     url.searchParams.append("nonce", params.nonce);
+    url.searchParams.append("prompt", "login");
     if (params.consent_id) {
         url.searchParams.append("request", getSignedAuthorizationRequest({
             consentId: params.consent_id,

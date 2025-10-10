@@ -16,7 +16,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { Send, LogOut, Search, MoreVertical, Phone, Video } from "lucide-react"
+import { Send, LogOut, Search, MoreVertical, Phone, Video, Laugh } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { MarkdownRenderer } from "@/components/markdown-renderer"
 import Cookies from 'js-cookie';
@@ -347,6 +347,9 @@ export default function ChatPage() {
 
           {/* Input Area */}
           <div className="whatsapp-input-area">
+            <div className="whatsapp-icon-button">
+              <Laugh size={28} />
+            </div>
             <div className="whatsapp-input-container">
               <textarea
                 className="whatsapp-input"
@@ -363,7 +366,7 @@ export default function ChatPage() {
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
             >
-              <Send size={20} />
+              <Send size={22} />
             </button>
           </div>
         </div>
