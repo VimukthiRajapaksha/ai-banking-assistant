@@ -21,46 +21,46 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
   const actualContent = match ? match[1] : content
 
   return (
-    <div className={`chat-markdown ${className}`}>
+    <div className={`whatsapp-markdown ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
         components={{
           // Customize headers
           h1: ({ children, ...props }) => (
-            <h1 className="text-xl font-bold mb-3 mt-4 text-white" {...props}>
+            <h1 className="text-xl font-bold mb-3 mt-4" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </h1>
           ),
           h2: ({ children, ...props }) => (
-            <h2 className="text-lg font-bold mb-2 mt-3 text-white" {...props}>
+            <h2 className="text-lg font-bold mb-2 mt-3" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </h2>
           ),
           h3: ({ children, ...props }) => (
-            <h3 className="text-md font-semibold mb-2 mt-3 text-white" {...props}>
+            <h3 className="text-md font-semibold mb-2 mt-3" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </h3>
           ),
           h4: ({ children, ...props }) => (
-            <h4 className="text-sm font-semibold mb-1 mt-2 text-white" {...props}>
+            <h4 className="text-sm font-semibold mb-1 mt-2" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </h4>
           ),
           h5: ({ children, ...props }) => (
-            <h5 className="text-sm font-medium mb-1 mt-2 text-gray-200" {...props}>
+            <h5 className="text-sm font-medium mb-1 mt-2" style={{ color: 'var(--whatsapp-text-secondary)' }} {...props}>
               {children}
             </h5>
           ),
           h6: ({ children, ...props }) => (
-            <h6 className="text-xs font-medium mb-1 mt-2 text-gray-200" {...props}>
+            <h6 className="text-xs font-medium mb-1 mt-2" style={{ color: 'var(--whatsapp-text-secondary)' }} {...props}>
               {children}
             </h6>
           ),
           
           // Customize paragraphs
           p: ({ children, ...props }) => (
-            <p className="mb-2 text-white leading-relaxed" {...props}>
+            <p className="mb-2 leading-relaxed" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </p>
           ),
@@ -77,7 +77,7 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
             </ol>
           ),
           li: ({ children, ...props }) => (
-            <li className="text-white leading-relaxed" {...props}>
+            <li className="leading-relaxed" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </li>
           ),
@@ -85,18 +85,18 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
           // Customize tables
           table: ({ children, ...props }) => (
             <div className="overflow-x-auto mb-3">
-              <table className="min-w-full border border-gray-400 rounded-lg text-sm" {...props}>
+              <table className="min-w-full rounded-lg text-sm" style={{ border: '1px solid var(--whatsapp-border)' }} {...props}>
                 {children}
               </table>
             </div>
           ),
           thead: ({ children, ...props }) => (
-            <thead className="bg-gray-600" {...props}>
+            <thead style={{ backgroundColor: 'var(--whatsapp-bg-light)' }} {...props}>
               {children}
             </thead>
           ),
           tbody: ({ children, ...props }) => (
-            <tbody className="bg-gray-700 divide-y divide-gray-500" {...props}>
+            <tbody style={{ backgroundColor: 'var(--whatsapp-bg-white)' }} {...props}>
               {children}
             </tbody>
           ),
@@ -106,19 +106,28 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
             </tr>
           ),
           th: ({ children, ...props }) => (
-            <th className="px-3 py-2 text-left font-medium text-white border-b border-gray-400" {...props}>
+            <th className="px-3 py-2 text-left font-medium" style={{ 
+              color: 'var(--whatsapp-text-primary)', 
+              borderBottom: '1px solid var(--whatsapp-border)' 
+            }} {...props}>
               {children}
             </th>
           ),
           td: ({ children, ...props }) => (
-            <td className="px-3 py-2 text-gray-200 border-b border-gray-500" {...props}>
+            <td className="px-3 py-2" style={{ 
+              color: 'var(--whatsapp-text-secondary)', 
+              borderBottom: '1px solid var(--whatsapp-border)' 
+            }} {...props}>
               {children}
             </td>
           ),
           
           // Customize blockquotes
           blockquote: ({ children, ...props }) => (
-            <blockquote className="border-l-4 border-blue-300 pl-4 py-2 mb-3 italic text-gray-800" {...props}>
+            <blockquote className="pl-4 py-2 mb-3 italic" style={{ 
+              borderLeft: '4px solid var(--whatsapp-primary)', 
+              color: 'var(--whatsapp-text-secondary)' 
+            }} {...props}>
               {children}
             </blockquote>
           ),
@@ -127,11 +136,17 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
           code: ({ className, children, inline, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '')
             return !inline ? (
-              <code className={`${className} block bg-gray-800 text-gray-200 p-3 rounded-md text-sm overflow-x-auto`} {...props}>
+              <code className={`${className} block p-3 rounded-md text-sm overflow-x-auto`} style={{
+                backgroundColor: 'var(--whatsapp-code-bg)',
+                color: 'var(--whatsapp-text-primary)'
+              }} {...props}>
                 {children}
               </code>
             ) : (
-              <code className="bg-gray-700 text-gray-200 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+              <code className="px-1 py-0.5 rounded text-sm font-mono" style={{
+                backgroundColor: 'var(--whatsapp-code-bg)',
+                color: 'var(--whatsapp-text-primary)'
+              }} {...props}>
                 {children}
               </code>
             )
@@ -139,7 +154,10 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
           
           // Customize pre blocks (code blocks container)
           pre: ({ children, ...props }: any) => (
-            <pre className="bg-gray-800 text-gray-200 p-3 rounded-md overflow-x-auto mb-3 text-sm" {...props}>
+            <pre className="p-3 rounded-md overflow-x-auto mb-3 text-sm" style={{
+              backgroundColor: 'var(--whatsapp-code-bg)',
+              color: 'var(--whatsapp-text-primary)'
+            }} {...props}>
               {children}
             </pre>
           ),
@@ -148,7 +166,8 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
           a: ({ children, href, ...props }) => (
             <a 
               href={href} 
-              className="text-blue-300 hover:text-blue-200 underline" 
+              className="underline hover:no-underline" 
+              style={{ color: 'var(--whatsapp-primary)' }}
               target="_blank" 
               rel="noopener noreferrer" 
               {...props}
@@ -159,19 +178,19 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
           
           // Customize horizontal rules
           hr: ({ ...props }) => (
-            <hr className="border-gray-400 my-4" {...props} />
+            <hr className="my-4" style={{ borderColor: 'var(--whatsapp-border)' }} {...props} />
           ),
           
           // Customize emphasis
           em: ({ children, ...props }) => (
-            <em className="italic text-gray-200" {...props}>
+            <em className="italic" style={{ color: 'var(--whatsapp-text-secondary)' }} {...props}>
               {children}
             </em>
           ),
           
           // Customize strong text
           strong: ({ children, ...props }) => (
-            <strong className="font-semibold text-white" {...props}>
+            <strong className="font-semibold" style={{ color: 'var(--whatsapp-text-primary)' }} {...props}>
               {children}
             </strong>
           ),

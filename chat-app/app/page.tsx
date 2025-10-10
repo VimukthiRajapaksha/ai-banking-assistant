@@ -87,8 +87,8 @@ export default function ChatPage() {
       "1. Greet me by first name. " + 
       "2. Give a quick snapshot section with following details: " +
       " - Liquid Funds: Sum of Current and Savings Accounts " +
-      " - Total Investments: Sum of all investment accounts (FDs, TDs, Stock Portfolios etc) " +
-      " - Total Liabilities: Sum of all loans, credit " +
+      " - Investments: Sum of all investment accounts (FDs, TDs, Stock Portfolios etc) " +
+      " - Liabilities: Sum of all loans, credit " +
       " - Net position: Net of Total Assets (Funds+Investments) and Total Liabilities " +
       " - Credit Score: Credit score if available " +
       "3. Then based on the retrieved data suggest 3-4 personalized read-only follow-up questions section I could ask next. " +
