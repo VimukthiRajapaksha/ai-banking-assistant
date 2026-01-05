@@ -25,7 +25,7 @@ final ai:McpToolKit mcpToolKit = check new (
 
 final ai:ModelProvider modelProvider = check new anthropic:ModelProvider(
     apiKey = ANTHROPIC_API_KEY,
-    modelType = anthropic:CLAUDE_3_7_SONNET_20250219,
+    modelType = anthropic:CLAUDE_SONNET_4_20250514,
     temperature = 0.2,
     maxTokens = 1024
 );
@@ -34,7 +34,7 @@ final ai:Agent agent = check new (
     maxIter = 5,
     model = modelProvider,
     tools = [mcpToolKit],
-    memory = new ai:MessageWindowChatMemory(200),
+    memory = new ai:MessageWindowChatMemory(512),
     verbose = true,
     systemPrompt = {
         role: "Banking Customer Service Assistant",
@@ -53,7 +53,8 @@ final ai:Agent agent = check new (
 - Use markdown formatting for better readability
 
 ## Response Guidelines:
-- Always end responses by asking if the customer needs additional assistance
+- Always conclude responses by asking whether the customer needs additional assistance, unless the response already ends with a question.
+- Never hide or ignore URLs returned by tools. If a URL is present, show it to the user in markdown format and request that they download the attachment.
 
 ## Data Access:
 - Always verify information through tools, never assume
