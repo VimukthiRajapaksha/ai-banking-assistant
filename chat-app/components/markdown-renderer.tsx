@@ -20,8 +20,139 @@ export function MarkdownRenderer({ content, className = '', onSignIn, onSignOut,
   // If the entire content is a code block, extract and render the inner content as markdown
   const actualContent = match ? match[1] : content
 
+  // Extract URLs from content - must have a proper domain structure
+  const urlRegex = /https?:\/\/[^\s)]+|(?:\/[\w-./?%&=]+\.[\w]+)/g
+  const urls = actualContent.match(urlRegex) || []
+  const uniqueUrls = Array.from(new Set(urls))
+  
+  // Log URLs to console if found
+  if (uniqueUrls.length > 0) {
+    console.log('URLs found in content:', uniqueUrls)
+  }
+
+  const getFileNameFromUrl = (url: string): string => {
+    try {
+      const pathname = url.includes('http') 
+        ? new URL(url).pathname 
+        : url
+      
+      // Split path into segments and filter out empty ones
+      const segments = pathname.split('/').filter(Boolean)
+      
+      if (segments.length === 0) return 'download'
+      
+      // Get the last segment (potential filename)
+      const lastSegment = segments[segments.length - 1]
+      const idSegment = segments[segments.length - 2]
+      
+      // If it has an extension, use it as-is
+      if (lastSegment.includes('.')) {
+        return lastSegment
+      }
+      
+      // If no extension, try to create a meaningful filename
+      // For API endpoints like '/receipt' or '/document', use that as filename
+      if (lastSegment && lastSegment.length > 0) {
+        return `${idSegment}-${lastSegment}.pdf` // Default to PDF for API endpoints
+      }
+      
+      return 'download'
+    } catch {
+      return 'download'
+    }
+  }
+
+  const getFileTypeIcon = (fileName: string): string => {
+    const ext = fileName.split('.').pop()?.toLowerCase()
+    console.log(`Determining icon for file extension: ${ext}`)
+    switch (ext) {
+      case 'pdf':
+        return '📄'
+      case 'doc':
+      case 'docx':
+        return '📝'
+      case 'xls':
+      case 'xlsx':
+        return '📊'
+      case 'zip':
+      case 'rar':
+        return '📦'
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return '🖼️'
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+        return '🎬'
+      case 'mp3':
+      case 'wav':
+        return '🎵'
+      case 'txt':
+      case 'csv':
+      case 'json':
+      case 'xml':
+        return '📋'
+      default:
+        return '📎'
+    }
+  }
+
+  const downloadFile = async (url: string, fileName: string) => {
+    try {
+      const fullUrl = url.startsWith('http') ? url : `http://${url}`
+      const response = await fetch(fullUrl)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error('Download failed:', error)
+      window.open(url.startsWith('http') ? url : `http://${url}`, '_blank')
+    }
+  }
+
   return (
     <div className={`whatsapp-markdown ${className}`}>
+      {/* Render attachments if URLs are found */}
+      {uniqueUrls.length > 0 && (
+        <div className="mb-3 space-y-2 w-full">
+          {uniqueUrls.map((url, index) => {
+            const fileName = getFileNameFromUrl(url)
+            const fileIcon = getFileTypeIcon(fileName)
+            const ext = fileName.split('.').pop()?.toLowerCase()
+            console.log(`File ${index + 1}: name="${fileName}", extension="${ext}"`)
+            return (
+              <div
+                key={index}
+                className="block cursor-pointer transition-opacity hover:opacity-80"
+                onClick={() => downloadFile(url, fileName)}
+              >
+                <div
+                  className="rounded-lg p-3 w-full"
+                  style={{
+                    backgroundColor: 'var(--whatsapp-bg-light)',
+                    border: '1px solid var(--whatsapp-border)'
+                  }}
+                >
+                  <div className="flex flex-row items-center gap-3">
+                    <span className="text-3xl flex-shrink-0">{fileIcon}</span>
+                    <p className="text-sm font-medium truncate flex-1" style={{ color: 'var(--whatsapp-text-primary)' }}>
+                      {fileName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
