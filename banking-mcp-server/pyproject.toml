@@ -7,4 +7,11 @@ requires-python = ">=3.12"
 dependencies = [
     "mcp[cli]>=1.13.1",
     "requests>=2.32.5",
+    "pydantic>=2.0",
+    "reportlab>=4.0.0",
+    "starlette>=0.35.0",
+    "uvicorn>=0.27.0",
 ]
+
+[project.scripts]
+banking-mcp-server = "banking_mcp_server.__main__:main"

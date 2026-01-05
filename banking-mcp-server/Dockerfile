@@ -1,5 +1,5 @@
 # Use Python 3.11 slim image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
@@ -34,4 +34,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Command to run the application
-CMD ["python", "main.py"]
+CMD ["python", "-m", "banking_mcp_server"]

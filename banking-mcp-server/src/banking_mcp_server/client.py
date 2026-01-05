@@ -20,7 +20,7 @@ from typing import Any, Optional
 import requests
 from requests import Response
 
-from config import ServerConfigs
+from .config import ServerConfigs
 
 logger = logging.getLogger(__name__)
 
@@ -76,4 +76,53 @@ class HTTPClient:
                 return result
         except requests.RequestException as e:
             logger.error(f"HTTP GET request to {url} failed. Caused by: {e}")
+            return {"error": str(e)}
+
+    def post(
+            self,
+            url: str,
+            *,
+            json: Optional[dict[str, Any]] = None,
+            headers: Optional[dict[str, str]] = None,
+            timeout: float = 10.0,
+    ) -> Any:
+        """Perform an HTTP POST and return the parsed JSON payload.
+
+        Args:
+            url: The URL to post to.
+            json: Optional JSON data to include in the request body.
+            headers: Optional additional headers to include in the request.
+            timeout: Socket timeout in seconds.
+
+        Returns:
+            Parsed JSON (could be dict, list, etc.).
+        """
+        # Base headers, can be overridden or extended by caller
+        base_headers: dict[str, str] = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if headers:
+            base_headers.update(headers)
+
+        request_kwargs: dict[str, Any] = {
+            "headers": base_headers,
+            "json": json,
+            "timeout": timeout,
+        }
+
+        logger.debug(f"HTTP POST Request: url={url}, headers={base_headers}, json={json}, timeout={timeout}")
+        try:
+            response: Response = requests.post(url, **request_kwargs)
+            logger.debug(f"HTTP POST Response: status_code={response.status_code}, content={response.text}")
+            response.raise_for_status()  # Raises HTTPError for bad responses (4xx, 5xx)
+            result: dict[str, Any] = response.json()
+            data = result.get("data") or result.get("Data")
+            if data is not None:
+                return data
+            else:
+                logger.debug("No 'data' or 'Data' key found in response JSON.")
+                return result
+        except requests.RequestException as e:
+            logger.error(f"HTTP POST request to {url} failed. Caused by: {e}")
             return {"error": str(e)}

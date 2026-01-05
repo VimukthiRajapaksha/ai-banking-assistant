@@ -1,5 +1,4 @@
 # Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com/) All Rights Reserved.
-
 # WSO2 LLC. licenses this file to you under the Apache License,
 # Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License.
@@ -14,17 +13,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class ServerConfigs(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="OB_",
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_nested_delimiter="__",
-        extra="ignore",
-    )
-    server_url: str
-    server_api_key: str
-    mcp_host: str = "localhost"
-    mcp_port: int = 8000
+from .account_tools import register_account_tools
+from .bank_tools import register_bank_tools
+from .payment_tools import register_payment_tools
+from .user_tools import register_user_tools
+
+__all__ = [
+    "register_account_tools",
+    "register_bank_tools",
+    "register_payment_tools",
+    "register_user_tools",
+]

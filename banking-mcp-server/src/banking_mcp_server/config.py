@@ -14,8 +14,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from server import mcp
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Run server with streamable_http transport
-if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+class ServerConfigs(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="OB_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
+    server_url: str = ""
+    server_api_key: str = ""
+    mcp_host: str = "localhost"
+    mcp_port: int = 8000
+    mcp_server_url: str = ""
