@@ -1,10 +1,25 @@
+/**
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import express from 'express';
 import cors from 'cors';
 
-// Import mock data from external files
-import { mockAccounts } from './data/accounts.js';
-import { mockProducts } from './data/products.js';
-import { mockUser } from './data/user.js';
+import { mockAccounts, mockProducts, mockUser, mockPayees } from './data/index.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +36,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: [
       'GET /me - Get current user profile information',
+      'GET /payees - Get all payees associated with the user',
       'GET /accounts - Get all accounts with transactions',
       'GET /accounts/:accountId - Get specific account with transactions',
       'GET /accounts/:accountId/transactions - Get transactions for specific account with filtering',
@@ -36,6 +52,23 @@ app.get('/me', (req, res) => {
     res.json({
       success: true,
       data: mockUser,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// Get current user profile
+app.get('/payees', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: mockPayees,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -157,6 +190,95 @@ app.get('/accounts/:accountId/transactions', (req, res) => {
           limit: limit ? parseInt(limit) : null
         }
       },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Store a new transaction directly to the account
+ */
+app.post('/accounts/:accountId/transactions', (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { currency, amount, sender, beneficiary, remarks, transaction_id } = req.body;
+
+    // Validate account exists
+    const account = mockAccounts.find(acc => acc.AccountId === accountId);
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'Account not found',
+        message: `Account with ID ${accountId} does not exist`
+      });
+    }
+
+    // Validate required fields
+    if (!currency || !amount || !sender || !beneficiary || !remarks || !transaction_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid transaction data',
+        message: 'currency, amount, sender, beneficiary, remarks, and transaction_id are required fields'
+      });
+    }
+
+    // Validate sender and beneficiary have required fields
+    if (!sender.account_id || !sender.name || !beneficiary.account_id || !beneficiary.name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid party details',
+        message: 'Both sender and beneficiary must have account_id and name'
+      });
+    }
+
+    // Create a new transaction object
+    const newTransaction = {
+      AccountId: accountId,
+      TransactionId: transaction_id,
+      Amount: {
+        Amount: amount.toString(),
+        Currency: currency
+      },
+      CreditDebitIndicator: 'Debit',
+      Status: 'SUCCESS',
+      BookingDateTime: new Date().toISOString(),
+      ValueDateTime: new Date().toISOString(),
+      TransactionInformation: remarks,
+      Balance: {
+        Amount: {
+          Amount: account.Balance[0]?.Amount?.Amount || '0',
+          Currency: account.Currency
+        },
+        CreditDebitIndicator: 'Credit',
+        Type: 'InterimBooked'
+      },
+      DebtorAccount: {
+        SchemeName: 'UK.OBIE.SortCodeAccountNumber',
+        Identification: sender.account_id,
+        Name: sender.name
+      },
+      CreditorAccount: {
+        SchemeName: 'UK.OBIE.SortCodeAccountNumber',
+        Identification: beneficiary.account_id,
+        Name: beneficiary.name
+      }
+    };
+
+    // Add transaction directly to the account's Transactions array
+    if (!account.Transactions) {
+      account.Transactions = [];
+    }
+    account.Transactions.push(newTransaction);
+
+    res.status(201).json({
+      success: true,
+      data: newTransaction,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

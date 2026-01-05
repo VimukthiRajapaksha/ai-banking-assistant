@@ -16,14 +16,8 @@
  * under the License.
  */
 
-export const getCurrentTime = () => new Date().toISOString().split('T')[0];
-
-export const getDaysAgo = (days) => new Date(new Date().setDate(new Date().getDate() - days)).toISOString().split('T')[0];
-
-export const getDaysFromNow = (days) => new Date(new Date().setDate(new Date().getDate() + days)).toISOString().split('T')[0];
-
-export const getLastDayOfCurrentMonth = () => {
-    const now = new Date();
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return lastDay.toISOString().split('T')[0];
-};
+// Export all mock data modules
+export { mockAccounts } from './accounts.js';
+export { mockPayees } from './payees.js';
+export { mockProducts } from './products.js';
+export { mockUser } from './user.js';

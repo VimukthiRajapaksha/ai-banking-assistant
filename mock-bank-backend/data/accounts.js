@@ -1,9 +1,27 @@
+/**
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import { getCurrentTime, getDaysAgo, getDaysFromNow } from './utils.js';
 
 // Mock data for banking accounts
 export const mockAccounts = [
   {
-    "AccountId": "acc-001",
+    "AccountId": "20142041827563",
     "Status": "Enabled",
     "StatusUpdateDateTime": getDaysAgo(3),
     "Currency": "USD",
@@ -13,7 +31,7 @@ export const mockAccounts = [
     "OpeningDate": "2020-01-15",
     "Balance": [
       {
-        "AccountId": "acc-001",
+        "AccountId": "20142041827563",
         "Amount": {
           "Amount": "2850.75",
           "Currency": "USD"
@@ -33,7 +51,7 @@ export const mockAccounts = [
         ]
       },
       {
-        "AccountId": "acc-001",
+        "AccountId": "20142041827563",
         "Amount": {
           "Amount": "2850.75",
           "Currency": "USD"
@@ -45,7 +63,7 @@ export const mockAccounts = [
     ],
     "Transactions": [
       {
-        "AccountId": "acc-001",
+        "AccountId": "20142041827563",
         "TransactionId": "txn-001",
         "TransactionReference": "CP-001-20250922",
         "Amount": {
@@ -79,7 +97,7 @@ export const mockAccounts = [
         }
       },
       {
-        "AccountId": "acc-001",
+        "AccountId": "20142041827563",
         "TransactionId": "txn-002",
         "TransactionReference": "SAL-002-20250921",
         "Amount": {
@@ -110,7 +128,7 @@ export const mockAccounts = [
         }
       },
       {
-        "AccountId": "acc-001",
+        "AccountId": "20142041827563",
         "TransactionId": "txn-003",
         "TransactionReference": "GRO-003-20250920",
         "Amount": {
@@ -142,7 +160,7 @@ export const mockAccounts = [
     ]
   },
   {
-    "AccountId": "acc-002",
+    "AccountId": "04000469873452",
     "Status": "Enabled",
     "StatusUpdateDateTime": getDaysAgo(2),
     "Currency": "USD",
@@ -152,7 +170,7 @@ export const mockAccounts = [
     "OpeningDate": "2020-03-01",
     "Balance": [
       {
-        "AccountId": "acc-002",
+        "AccountId": "04000469873452",
         "Amount": {
           "Amount": "15750.25",
           "Currency": "USD"
@@ -162,7 +180,7 @@ export const mockAccounts = [
         "DateTime": getCurrentTime(),
       },
       {
-        "AccountId": "acc-002",
+        "AccountId": "04000469873452",
         "Amount": {
           "Amount": "15750.25",
           "Currency": "USD"
@@ -174,7 +192,7 @@ export const mockAccounts = [
     ],
     "Transactions": [
       {
-        "AccountId": "acc-002",
+        "AccountId": "04000469873452",
         "TransactionId": "txn-006",
         "TransactionReference": "INT-006-20250920",
         "Amount": {
@@ -200,7 +218,7 @@ export const mockAccounts = [
         }
       },
       {
-        "AccountId": "acc-002",
+        "AccountId": "04000469873452",
         "TransactionId": "txn-007",
         "TransactionReference": "TRF-007-20250915",
         "Amount": {
@@ -233,7 +251,7 @@ export const mockAccounts = [
     ]
   },
   {
-    "AccountId": "acc-003",
+    "AccountId": "23000312549876",
     "Status": "Enabled",
     "StatusUpdateDateTime": getDaysAgo(3),
     "Currency": "USD",
@@ -249,7 +267,7 @@ export const mockAccounts = [
     },
     "Balance": [
       {
-        "AccountId": "acc-003",
+        "AccountId": "23000312549876",
         "Amount": {
           "Amount": "1254.70",
           "Currency": "USD"
@@ -269,7 +287,7 @@ export const mockAccounts = [
         ]
       },
       {
-        "AccountId": "acc-003",
+        "AccountId": "23000312549876",
         "Amount": {
           "Amount": "7245.30",
           "Currency": "USD"
@@ -281,7 +299,7 @@ export const mockAccounts = [
     ],
     "Transactions": [
       {
-        "AccountId": "acc-003",
+        "AccountId": "23000312549876",
         "TransactionId": "txn-009",
         "TransactionReference": "SHP-009-20250922",
         "Amount": {
@@ -311,7 +329,7 @@ export const mockAccounts = [
         }
       },
       {
-        "AccountId": "acc-003",
+        "AccountId": "23000312549876",
         "TransactionId": "txn-010",
         "TransactionReference": "RST-010-20250921",
         "Amount": {
@@ -341,7 +359,7 @@ export const mockAccounts = [
         }
       },
       {
-        "AccountId": "acc-003",
+        "AccountId": "23000312549876",
         "TransactionReference": "PAY-011-20250920",
         "TransactionId": "txn-011",
         "Amount": {
@@ -369,7 +387,7 @@ export const mockAccounts = [
     ]
   },
   {
-    "AccountId": "acc-004",
+    "AccountId": "60161387654321",
     "Status": "Enabled",
     "StatusUpdateDateTime": getDaysAgo(5),
     "Currency": "USD",
@@ -385,7 +403,7 @@ export const mockAccounts = [
     },
     "Balance": [
       {
-        "AccountId": "acc-004",
+        "AccountId": "60161387654321",
         "Amount": {
           "Amount": "80000.00",
           "Currency": "USD"
@@ -407,7 +425,7 @@ export const mockAccounts = [
     }
   },
   {
-    "AccountId": "acc-005",
+    "AccountId": "30907054231098",
     "Status": "Enabled",
     "StatusUpdateDateTime": getDaysAgo(2),
     "Currency": "USD",
@@ -423,7 +441,7 @@ export const mockAccounts = [
     },
     "Balance": [
       {
-        "AccountId": "acc-005",
+        "AccountId": "30907054231098",
         "Amount": {
           "Amount": "12000.00",
           "Currency": "USD"
