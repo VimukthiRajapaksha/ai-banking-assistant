@@ -120,6 +120,7 @@ def register_payment_tools(mcp: FastMCP) -> None:
         logger.info(f"[TID: {transaction_id}] Payment initiated with details.")
 
         # Store payment context in cache with transaction ID as key for payment_authorize tool
+        request.sender.bank_name = "Finthesis Bank"
         payment_cache[transaction_id] = PaymentContext(
             **request.model_dump(), transaction_id=transaction_id
         )
@@ -129,13 +130,13 @@ def register_payment_tools(mcp: FastMCP) -> None:
 
         return (
             f"Payment initiated successfully. Transaction ID: {transaction_id}\n"
-            f"From: {request.sender.name} ({request.sender.account_id})\n"
-            f"To: {request.beneficiary.name} ({request.beneficiary.account_id}) - {request.beneficiary.bank_name}\n"
+            f"From: name={request.sender.name} account ID={request.sender.account_id}\n"
+            f"To: name={request.beneficiary.name}, bank={request.beneficiary.bank_name}, "
+            f"account ID={request.beneficiary.account_id}\n"
             f"Amount: {request.amount} {request.currency}\n"
             f"Remarks: {request.remarks}\n\n"
-            f"Please get the user confirmation to proceed with payment authorization. "
-            f"Once the user confirms, use the payment_authorize tool next with transaction ID and consent=true. "
-            f"If the user declines, use payment_authorize with consent=false."
+            f"NEXT STEP: Show user ALL transaction details above. Request user confirmation (yes/no) to proceed with payment authorization.\n"
+            f"Then call payment_authorize tool with transaction ID and consent=true if confirmed or consent=false if declined"
         )
 
     @mcp.tool(
