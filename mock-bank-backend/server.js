@@ -276,6 +276,22 @@ app.post('/accounts/:accountId/transactions', (req, res) => {
     }
     account.Transactions.push(newTransaction);
 
+    // Update account balance based on transaction type
+    if (account.Balance && account.Balance.length > 0) {
+      account.Balance.forEach(balance => {
+        const currentAmount = parseFloat(balance.Amount.Amount);
+        let newAmount = currentAmount;
+
+        if (newTransaction.CreditDebitIndicator === 'Debit') {
+          newAmount = currentAmount - parseFloat(amount);
+        } else if (newTransaction.CreditDebitIndicator === 'Credit') {
+          newAmount = currentAmount + parseFloat(amount);
+        }
+
+        balance.Amount.Amount = newAmount.toFixed(2);
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: newTransaction,
