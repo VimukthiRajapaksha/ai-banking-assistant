@@ -1,5 +1,5 @@
 # Use official Ballerina runtime image
-FROM ballerina/ballerina:2201.8.6
+FROM ballerina/ballerina:2201.13.3
 
 # Set working directory
 WORKDIR /app
