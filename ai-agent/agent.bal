@@ -25,7 +25,7 @@ final ai:McpToolKit mcpToolKit = check new (
 
 final ai:ModelProvider modelProvider = check new anthropic:ModelProvider(
     apiKey = ANTHROPIC_API_KEY,
-    modelType = anthropic:CLAUDE_SONNET_4_20250514,
+    modelType = anthropic:CLAUDE_SONNET_4_6,
     temperature = 0.2,
     maxTokens = 1024
 );
