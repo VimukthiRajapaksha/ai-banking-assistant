@@ -2,7 +2,7 @@
 FROM node:current-alpine AS builder
 RUN npm install -g pnpm
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
@@ -20,7 +20,7 @@ RUN addgroup --system --gid 10001 nodejs
 RUN adduser --system --uid 10001 nextjs
 
 # Copy package files for production dependencies
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install only production dependencies
 RUN pnpm install --frozen-lockfile --prod
