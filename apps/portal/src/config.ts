@@ -1,9 +1,26 @@
-/** Typed wrapper over import.meta.env.VITE_* -- see .env.example for the full list. */
+/** Typed wrapper over the app's settings -- see .env.example for the full list.
+ *
+ * Each key is read from `window.configs` first, then from Vite's build-time
+ * `import.meta.env`. `window.configs` comes from /config.js, which the WSO2
+ * Developer Platform mounts per environment: it does not bake environment
+ * variables into an SPA's build. Locally /config.js is an empty default
+ * (public/config.js), so `.env` keeps working unchanged.
+ */
+
+declare global {
+  interface Window {
+    configs?: Record<string, string | undefined>;
+  }
+}
+
+function read(key: string): string | undefined {
+  return window.configs?.[key] || import.meta.env[key];
+}
 
 function required(key: string): string {
-  const value = import.meta.env[key];
+  const value = read(key);
   if (!value) {
-    throw new Error(`Missing required env var: ${key}`);
+    throw new Error(`Missing required setting: ${key}`);
   }
   return value;
 }
@@ -31,11 +48,12 @@ export const config = {
     // the one it calls both the bank and /chat with.
     audience: required('VITE_AUTH__AUDIENCE'),
   },
-  /** Passkey setup. Same origin, forwarded by Caddy to the service that holds
-   * the ThunderID flow secret -- which cannot live in the browser, so this is
-   * a relay rather than a direct call to the IdP. */
+  /** Passkey setup, relayed by the agent -- it holds the ThunderID flow
+   * secret, which cannot live in the browser, so this is a relay rather than a
+   * direct call to the IdP. The agent's `/security/passkey` URL; the default
+   * is same-origin, for a proxy that forwards that path to the agent. */
   security: {
-    baseUrl: '/security/passkey',
+    baseUrl: read('VITE_SECURITY__PASSKEY_URL') || '/security/passkey',
   },
   bankApi: {
     // Root of the bank's API; every resource is a path beneath it.
@@ -49,6 +67,6 @@ export const config = {
    * have granted, and that is the portal. Optional: without it the account
    * menu omits the item rather than offering a link that goes nowhere. */
   consentPortal: {
-    url: import.meta.env.VITE_CONSENT_PORTAL_URL as string | undefined,
+    url: read('VITE_CONSENT_PORTAL_URL'),
   },
 };

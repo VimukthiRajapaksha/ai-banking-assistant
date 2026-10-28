@@ -1,0 +1,28 @@
+// Template for the WSO2 Developer Platform file mount: Deploy -> Configure &
+// Deploy -> File Mount, mount path /config.js (the web root, next to
+// index.html). One copy per environment. Replace each <...>.
+//
+// Everything here reaches the browser: no secrets. Keys are the same as
+// .env.example; src/config.ts reads this first and .env only as a fallback.
+window.configs = {
+  VITE_AUTH__BASE_URL: 'https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com',
+  VITE_AUTH__CLIENT_ID: 'apex-portal-client',
+  // Both must be registered on the ThunderID app (APEX_PORTAL_ORIGIN in
+  // platform/identity/thunderid/apex-thunderid.env, then re-import).
+  VITE_AUTH__AFTER_SIGN_IN_URL: '<portal web app URL>/oauth/callback',
+  VITE_AUTH__AFTER_SIGN_OUT_URL: '<portal web app URL>',
+  VITE_AUTH__LOGIN_SCOPES:
+    'openid profile email apex:agent:chat:read apex:agent:chat:write ' +
+    'apex:bank:accounts:read apex:bank:accounts:balances:read apex:bank:accounts:transactions:read ' +
+    'apex:bank:payees:read apex:bank:payments:write ' +
+    'apex:mcp:accounts:read apex:mcp:transactions:read apex:mcp:payees:read apex:mcp:payments:write',
+  VITE_AUTH__AUDIENCE: 'urn:apex',
+
+  // Called from the browser, so each must allow CORS from the portal's origin.
+  VITE_BANK_API__BASE_URL: '<bank API base URL>',
+  VITE_AGENT__CHAT_URL: '<agent URL>/chat',
+  VITE_SECURITY__PASSKEY_URL: '<agent URL>/security/passkey',
+
+  // Optional: a link in the account menu. Leave out to hide it.
+  // VITE_CONSENT_PORTAL_URL: '<consent portal URL>',
+};

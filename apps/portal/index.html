@@ -22,6 +22,10 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime settings (window.configs), read by src/config.ts. Mounted per
+         environment on the WSO2 Developer Platform; public/config.js is the
+         empty local default. Must load before the app. -->
+    <script src="/config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
