@@ -25,6 +25,10 @@ function required(key: string): string {
   return value;
 }
 
+// The agent's root: /chat and the passkey relay are paths beneath it. Empty
+// means the portal's own origin, for a proxy that forwards those paths.
+const agentBaseUrl = (read('VITE_AGENT__BASE_URL') ?? '').replace(/\/$/, '');
+
 export const config = {
   auth: {
     baseUrl: required('VITE_AUTH__BASE_URL'),
@@ -50,23 +54,22 @@ export const config = {
   },
   /** Passkey setup, relayed by the agent -- it holds the ThunderID flow
    * secret, which cannot live in the browser, so this is a relay rather than a
-   * direct call to the IdP. The agent's `/security/passkey` URL; the default
-   * is same-origin, for a proxy that forwards that path to the agent. */
+   * direct call to the IdP. */
   security: {
-    baseUrl: read('VITE_SECURITY__PASSKEY_URL') || '/security/passkey',
+    baseUrl: `${agentBaseUrl}/security/passkey`,
   },
   bankApi: {
     // Root of the bank's API; every resource is a path beneath it.
     baseUrl: required('VITE_BANK_API__BASE_URL'),
   },
   agent: {
-    chatUrl: required('VITE_AGENT__CHAT_URL'),
+    chatUrl: `${agentBaseUrl}/chat`,
   },
   /** A link only. This app never calls the consent API -- the MCP server owns
    * that -- but the customer needs somewhere to review and revoke what they
    * have granted, and that is the portal. Optional: without it the account
    * menu omits the item rather than offering a link that goes nowhere. */
   consentPortal: {
-    url: read('VITE_CONSENT_PORTAL_URL'),
+    url: read('VITE_CONSENT__PORTAL_URL'),
   },
 };

@@ -32,22 +32,23 @@ src/
 
 ## Environment variables
 
-Copy `.env.example` to `.env` and fill in the values.
+Locally, copy `.env.example` to `.env`. On the WSO2 Developer Platform, mount
+`config.js` per environment from `config.js.example`: Vite bakes `.env` in at
+build time, which the platform does not support for SPAs, so `src/config.ts`
+reads `window.configs` from `config.js` first and `.env` as the fallback. Same
+keys in both.
 
-| Variable | What it is |
-|---|---|
-| `VITE_AUTH__BASE_URL` | Asgardeo organization base URL |
-| `VITE_AUTH__CLIENT_ID` | Client ID of this single-page application |
-| `VITE_AUTH__AFTER_SIGN_IN_URL` | Redirect URL after sign-in, registered byte-identically on the app |
-| `VITE_AUTH__AFTER_SIGN_OUT_URL` | Where to land after sign-out |
-| `VITE_AUTH__LOGIN_SCOPES` | Scope envelope requested at sign-in. A delegated exchange narrows but never widens, so every scope any downstream hop needs must be granted here |
-| `VITE_AUTH__AGENT_AUDIENCE` | Resource identifier of the agent's chat API; the `audience` of the exchanged token |
-| `VITE_AUTH__AGENT_SCOPES` | Scopes requested on the exchanged token |
-| `VITE_BANK_API__BASE_URL` | Root of the bank's API, called directly with the sign-in token |
-| `VITE_AGENT__CHAT_URL` | The agent's `/chat` endpoint |
-| `VITE_CONSENT__BASE_URL` | Consent service base. Left as `/consent-api` so Vite proxies it — the service sends no CORS headers |
-| `VITE_CONSENT__ORG_ID` | `org-id` header the consent service requires |
-| `VITE_CONSENT__GROUP_ID` | `group-id` header the consent service requires |
+| Variable | Required | Used for |
+|---|---|---|
+| `VITE_AUTH__BASE_URL` | yes | ThunderID's base URL: sign-in, tokens, and sign-out (`/oauth2/logout`) |
+| `VITE_AUTH__CLIENT_ID` | yes | The portal's ThunderID application (`apex-portal-client`) |
+| `VITE_AUTH__AFTER_SIGN_IN_URL` | yes | Where ThunderID returns after sign-in; registered byte-identically on the app. Its path is the route that completes sign-in |
+| `VITE_AUTH__AFTER_SIGN_OUT_URL` | yes | Where ThunderID returns after sign-out |
+| `VITE_AUTH__LOGIN_SCOPES` | yes | Every permission requested at sign-in. A delegated exchange narrows but never widens, so each scope a downstream hop needs must be granted here |
+| `VITE_AUTH__AUDIENCE` | yes | Resource indicator sent at sign-in (`urn:apex`); the token's audience |
+| `VITE_BANK_API__BASE_URL` | yes | Root of the bank's API, called directly with the sign-in token |
+| `VITE_AGENT__BASE_URL` | no | The agent's root. The app calls `<base>/chat` (assistant) and `<base>/security/passkey` (passkey enrolment). Empty means the portal's own origin |
+| `VITE_CONSENT__PORTAL_URL` | no | Link to the consent portal in the account menu; hidden when unset |
 
 ## Running
 

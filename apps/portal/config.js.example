@@ -20,9 +20,9 @@ window.configs = {
 
   // Called from the browser, so each must allow CORS from the portal's origin.
   VITE_BANK_API__BASE_URL: '<bank API base URL>',
-  VITE_AGENT__CHAT_URL: '<agent URL>/chat',
-  VITE_SECURITY__PASSKEY_URL: '<agent URL>/security/passkey',
+  // The agent's root; the app adds /chat and /security/passkey.
+  VITE_AGENT__BASE_URL: '<agent URL>',
 
   // Optional: a link in the account menu. Leave out to hide it.
-  // VITE_CONSENT_PORTAL_URL: '<consent portal URL>',
+  // VITE_CONSENT__PORTAL_URL: '<consent portal URL>',
 };

@@ -101,7 +101,7 @@ export function AutoSignIn() {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         {/* Decorative: the wordmark beside it already names the bank, so the
             image is hidden from screen readers rather than read out twice. */}
-        <Box component="img" src="/apex-logo-96.png" alt="" aria-hidden sx={{ width: 40, height: 40 }} />
+        <Box component="img" src="/apex-logo.png" alt="" aria-hidden sx={{ width: 40, height: 40 }} />
         <Box sx={{ fontSize: 32, fontWeight: 800 }}>
           <Box component="span" sx={{ color: 'primary.main' }}>
             Apex
