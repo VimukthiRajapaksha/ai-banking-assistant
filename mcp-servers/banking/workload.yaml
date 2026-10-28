@@ -1,0 +1,88 @@
+# OpenChoreo workload descriptor, read from the component directory (appPath)
+# when the WSO2 Developer Platform builds this service: the endpoint, plus every
+# setting that is not a secret.
+#
+# Secrets are NOT here. Set them per environment in the console (environment
+# card -> configs / Workload -> environment variables, marked secret):
+#   MCP_OUTBOUND_OAUTH__CLIENT_SECRET  apex-mcp-client's secret (APEX_MCP_CLIENT_SECRET)
+#   MCP_STEPUP__FLOW_SECRET            apex-mcp-client's flow secret (APEX_MCP_FLOW_SECRET)
+#   MCP_REQUEST_STATE__KEYS            64 hex chars; python -c "import secrets; print(secrets.token_hex(32))"
+# Values set in the console override the ones below, and need only a redeploy.
+apiVersion: openchoreo.dev/v1alpha1
+metadata:
+  name: apex-bank-mcp-server
+endpoints:
+  # The public base path is /<component>-<endpoint>: /apex-bank-mcp-server-api,
+  # so the MCP URL is .../apex-bank-mcp-server-api/mcp.
+  - name: api
+    port: 18010
+    type: HTTP
+    # external: the agent runs on AMP Cloud, outside this platform.
+    visibility:
+      - external
+configurations:
+  env:
+    # --- Tokens presented to this server (by the agent) ---------------------
+    - name: MCP_INBOUND_OAUTH__DISCOVERY_URL
+      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
+    # One resource server for the whole chain, so one audience.
+    - name: MCP_INBOUND_OAUTH__AUDIENCE
+      value: urn:apex
+    # Empty: each tool checks its own scope (tools/catalog.py).
+    - name: MCP_INBOUND_OAUTH__REQUIRED_SCOPES
+      value: ""
+    - name: MCP_INBOUND_OAUTH__RESOURCE_SERVER_URL
+      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api
+    # Host headers the server answers to (the MCP SDK's DNS-rebinding check).
+    # Anything else gets 421 "Invalid Host header", so the gateway host must be
+    # listed. JSON list.
+    - name: MCP_ALLOWED_HOSTS
+      value: '["j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com","localhost:*","127.0.0.1:*"]'
+
+    # --- This server's client, exchanging for bank-scoped tokens ------------
+    - name: MCP_OUTBOUND_OAUTH__DISCOVERY_URL
+      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
+    - name: MCP_OUTBOUND_OAUTH__CLIENT_ID
+      value: apex-mcp-client
+    - name: MCP_OUTBOUND_OAUTH__AUDIENCE
+      value: urn:apex
+    - name: MCP_OUTBOUND_OAUTH__SCOPE
+      value: apex:bank:accounts:read apex:bank:accounts:balances:read apex:bank:accounts:transactions:read apex:bank:payees:read apex:bank:payments:write
+    # Required by the settings model; no redirect flow runs on this hop.
+    - name: MCP_OUTBOUND_OAUTH__REDIRECT_URI
+      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api/oauth/callback
+
+    # --- The bank -------------------------------------------------------------
+    - name: MCP_OUTBOUND_API__BASE_URL
+      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mock-backend-api
+
+    # --- Payment step-up (passkey), driven against ThunderID ----------------
+    - name: MCP_STEPUP__BASE_URL
+      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com
+    - name: MCP_STEPUP__APPLICATION_ID
+      value: apex-mcp-client
+    - name: MCP_STEPUP__REQUIRE_PASSKEY
+      value: "true"
+
+    # --- Consent service (OpenFGC) -- NOT HOSTED YET --------------------------
+    # Placeholders so the server starts. Every data tool checks consent first,
+    # so account, transaction and payment calls fail until OpenFGC is deployed
+    # and these point at it.
+    - name: MCP_CONSENT__BASE_URL
+      value: https://consent.invalid/api/v1
+    - name: MCP_CONSENT__ORG_ID
+      value: apex
+    - name: MCP_CONSENT__GROUP_ID
+      value: apex-banking
+    - name: MCP_CONSENT__ACCOUNT_ACCESS_PURPOSE_ID
+      value: not-provisioned
+    - name: MCP_CONSENT__PAYMENT_PURPOSE_ID
+      value: not-provisioned
+
+    # --- Runtime ----------------------------------------------------------------
+    # Selects the env file to load; none ships in the image, so the values come
+    # from here and the console only.
+    - name: MCP_ENV
+      value: production
+    - name: MCP_PORT
+      value: "18010"

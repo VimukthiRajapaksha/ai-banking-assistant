@@ -6,7 +6,8 @@ apiVersion: openchoreo.dev/v1alpha1
 metadata:
   name: apex-bank-mock-backend
 endpoints:
-  - name: bank-api
+  # The public base path is /<component>-<endpoint>: /apex-bank-mock-backend-api.
+  - name: api
     # The port the server listens on (PORT, default 18030 in src/server.js).
     port: 18030
     type: HTTP
