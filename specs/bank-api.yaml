@@ -1,0 +1,111 @@
+openapi: 3.0.0
+info:
+  version: v1.0
+  title: Apex Bank API
+  description: |
+    The bank's own APIs, fronted by WSO2 API Manager.
+
+    The backing service performs no authorization of its own — the gateway
+    validates the customer's Asgardeo token and enforces the subscription
+    before any request reaches it.
+servers:
+  - url: http://127.0.0.1:18030
+tags:
+  - name: Accounts
+  - name: Transactions
+  - name: Products
+  - name: Payees
+  - name: Payments
+paths:
+  /accounts:
+    get:
+      summary: List the customer's accounts
+      operationId: accounts-GET
+      tags: [Accounts]
+      responses:
+        '200':
+          description: The customer's accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+  /transactions:
+    get:
+      summary: List transactions
+      operationId: transactions-GET
+      tags: [Transactions]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: accountId
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of transactions
+          content:
+            application/json:
+              schema: { type: object }
+  /products:
+    get:
+      summary: List the product catalogue
+      operationId: products-GET
+      tags: [Products]
+      responses:
+        '200':
+          description: The product catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+  /payees:
+    get:
+      summary: List saved payees
+      operationId: payees-GET
+      tags: [Payees]
+      responses:
+        '200':
+          description: Saved payees
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+  /accounts/{accountId}/payments:
+    post:
+      summary: Initiate a payment from an account
+      operationId: payments-POST
+      tags: [Payments]
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201':
+          description: Payment accepted
+          content:
+            application/json:
+              schema: { type: object }
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: health-GET
+      tags: [Products]
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema: { type: object }

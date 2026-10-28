@@ -1,0 +1,96 @@
+# Apex Bank -- hosted ThunderID bundle. Step 3: the customer, groups and roles. Roles are checked against the resource server, so import 01-foundation.yaml first.
+# Import with apex-thunderid.env. Order: README.md.
+---
+resource_type: user
+# Opaque on purpose: the user id is the `sub` of every token, and so lands in
+# consent records, audit logs and traces. A name there is personal data, and
+# would be wrong the day the customer changes it.
+id: "246dc686-ee3a-5e2d-ba29-e60037395a28"
+type: apex-customer
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+attributes:
+  username: "alex.morgan"
+  password: "{{.APEX_USER_PASSWORD}}"
+  email: "alex@apexbank.com"
+  given_name: "Alex"
+  family_name: "Morgan"
+---
+# Roles go to groups, not to people, so a new customer is one membership away
+# from everything a customer gets.
+resource_type: group
+id: "d20a9174-5818-59b2-b626-6de949a63674"
+name: Apex Bank Customers
+description: Every Apex Bank customer
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+members:
+  - id: "246dc686-ee3a-5e2d-ba29-e60037395a28"
+    type: user
+---
+# Separate from Apex Bank Customers so the assistant can be switched off for
+# one customer -- remove them from this group -- without touching their banking.
+resource_type: group
+id: "a1c05562-8359-5812-be68-937fd81e0f96"
+name: Apex Bank AI Assistant Users
+description: Customers who may use the AI banking assistant
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+members:
+  - id: "246dc686-ee3a-5e2d-ba29-e60037395a28"
+    type: user
+---
+# Roles are named for who holds them, not for the API they open.
+resource_type: role
+id: apex-role-customer
+name: Apex Bank Customer
+description: What a customer may do with their own accounts
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:bank:accounts:read"
+      - "apex:bank:accounts:balances:read"
+      - "apex:bank:accounts:transactions:read"
+      - "apex:bank:payees:read"
+      - "apex:bank:payments:write"
+      - "apex:agent:chat:read"
+      - "apex:agent:chat:write"
+      - "apex:portal:consents:read"
+      - "apex:portal:consents:revoke"
+assignments:
+  - id: d20a9174-5818-59b2-b626-6de949a63674
+    type: group
+---
+# Separate from Apex Bank Customer so the assistant can be switched off for a
+# customer without touching their banking. It is held by the CUSTOMER, not the
+# agent: a delegated exchange only narrows what the customer's token carries.
+resource_type: role
+id: apex-role-agent
+name: Apex Bank AI Assistant User
+description: Customers who may use the AI banking assistant
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:mcp:accounts:read"
+      - "apex:mcp:transactions:read"
+      - "apex:mcp:payees:read"
+      - "apex:mcp:payments:write"
+assignments:
+  - id: a1c05562-8359-5812-be68-937fd81e0f96
+    type: group
+---
+resource_type: role
+id: apex-role-mcp
+name: Apex Bank MCP Client
+description: Bank API access for the MCP server
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:bank:accounts:read"
+      - "apex:bank:accounts:balances:read"
+      - "apex:bank:accounts:transactions:read"
+      - "apex:bank:payees:read"
+      - "apex:bank:payments:write"
+assignments:
+  - id: apex-mcp-client
+    type: app

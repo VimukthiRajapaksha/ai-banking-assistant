@@ -1,0 +1,6 @@
+node_modules
+*.log
+
+# Local env variants (secrets); .env.example stays tracked
+.env*
+!.env.example

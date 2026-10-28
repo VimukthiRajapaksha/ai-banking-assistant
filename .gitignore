@@ -1,62 +1,24 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Environment variables
+# Secrets: every env variant except the committed examples
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.env
+!*.env.example
 
-# Logs
-logs
+# Python
+__pycache__/
+*.py[oc]
+.venv/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
 *.log
 
-# Coverage directory used by tools like istanbul
-coverage/
-.nyc_output
-
-# Build outputs
-build/
-dist/
-
-# IDE files
-.vscode/
+# Editors / OS
 .idea/
-*.swp
-*.swo
-
-# OS generated files
+.vscode/
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-
-# Ballerina generates this directory during the compilation of a package.
-# It contains compiler-generated artifacts and the final executable if this is an application package.
-target/
-*/target/
-# Ballerina maintains the compiler-generated source code here.
-# Remove this if you want to commit generated sources.
-generated/
-
-# Contains configuration values used during development time.
-# See https://ballerina.io/learn/provide-values-to-configurable-variables/ for more details.
-Config.toml
-*/Config.toml

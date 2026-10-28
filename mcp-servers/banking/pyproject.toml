@@ -1,0 +1,26 @@
+[project]
+name = "ai-banking-mcp-server"
+version = "0.1.0"
+description = "AI Banking MCP Server"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "amp-instrumentation>=0.4.1",
+    "httpx>=0.28.1",
+    "mcp[cli]>=2.2.0",
+    "opentelemetry-api>=1.44.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.44.0",
+    "opentelemetry-instrumentation-asgi>=0.65b0",
+    "opentelemetry-instrumentation-fastapi>=0.65b0",
+    "opentelemetry-instrumentation-httpx>=0.65b0",
+    "opentelemetry-sdk>=1.44.0",
+    "pydantic-settings>=2.4.0",
+    "pyjwt[crypto]>=2.14",
+]
+
+[project.scripts]
+ai-banking-mcp-server = "ai_banking_mcp_server.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13"]
+build-backend = "uv_build"

@@ -1,0 +1,669 @@
+# Apex Bank -- hosted ThunderID bundle. Step 1: the OU, customer user type, branding, resource server and flows.
+# Import with apex-thunderid.env. Order: README.md.
+---
+resource_type: organization_unit
+id: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+# A root OU, independent of the instance's `default`. That rules out the
+# built-in Person user type (it belongs to `default`, and a user must be in the
+# type's OU or below it), so the customer type below is defined here.
+handle: apex-bank
+name: Apex Bank
+description: Customers and applications of Apex Bank
+---
+# Apex Bank's customers. Modelled on the built-in Person type; no
+# self-registration, because customers are onboarded by the bank.
+resource_type: user_type
+id: "41c99490-fa25-533f-b155-68c9b7d7f56e"
+category: user
+handle: apex-customer
+displayName: Apex Customer
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+allowSelfRegistration: false
+systemAttributes:
+  display: username
+  primaryEmail: email
+  primaryMobile: mobile_number
+schema:
+  username:
+    type: string
+    displayName: Username
+    required: true
+    unique: true
+  # Optional: customers sign in with a username the bank issues, and not every
+  # customer gives the bank an email address. Unique when present.
+  email:
+    type: email
+    displayName: Email
+    required: false
+    unique: true
+    regex: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  given_name:
+    type: string
+    displayName: First Name
+    required: false
+  family_name:
+    type: string
+    displayName: Last Name
+    required: false
+  mobile_number:
+    type: mobile
+    displayName: Mobile Number
+    required: false
+    regex: "^\\+[1-9]\\d{1,14}$"
+  password:
+    type: string
+    displayName: Password
+    required: false
+    credential: true
+---
+# Apex branding for ThunderID's hosted sign-in page (the Gate).
+#
+# A theme (colours, type, radius) and a layout (page structure plus inline
+# CSS), which the portal and consent-portal applications point at through
+# themeId / layoutId in 82-apex-applications.yaml. The same mechanism the AMP
+# console uses for its own sign-in page; nothing here touches that one.
+#
+# The values mirror the portals' "Apex Acrylic Blue" theme
+# (ai-banking-portal/src/theme.ts), so signing in looks like the product the
+# customer is signing in to.
+#
+# Numbered 79 so it imports before the applications that reference it.
+#
+# The logo is a data: URI, not a URL on the portal. ThunderID's CSP is
+# server-wide and owned by the AMP install; its img-src admits 'self', data:
+# and a few WSO2/Google hosts, so http://portal.apex.localhost/... is blocked
+# and rendered as a broken image. Inlining it needs no change to that policy.
+resource_type: theme
+id: apex-theme
+handle: apex
+displayName: Apex Bank Theme
+theme:
+  direction: ltr
+  defaultColorScheme: light
+  shape:
+    borderRadius: 12
+  typography:
+    fontFamily: "Inter Variable, Inter, sans-serif"
+    h1:
+      fontSize: "1.5rem"
+      fontWeight: 600
+      lineHeight: 1.3
+  colorSchemes:
+    light:
+      colors:
+        primary: { main: "#0050cb", dark: "#003fa4", contrastText: "#ffffff" }
+        secondary: { main: "#e5eaf5", dark: "#cfd6e6", contrastText: "#0b1c30" }
+        background: { default: "#f3f4f6", paper: "#ffffff" }
+        text: { primary: "#0b1c30", secondary: "#424656" }
+    dark:
+      colors:
+        primary: { main: "#4d8dff", dark: "#2f6fe8", contrastText: "#ffffff" }
+        secondary: { main: "#1e2738", dark: "#151c2a", contrastText: "#e6ecf7" }
+        background: { default: "#07090d", paper: "#11151d" }
+        text: { primary: "#e6ecf7", secondary: "#b3bdd1" }
+---
+resource_type: layout
+id: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+handle: apex
+displayName: Apex Bank Layout
+layout:
+  head:
+    stylesheets:
+      - id: apex-signin
+        type: inline
+        content: |
+          /*
+           * The Gate renders only the sign-in card once a layout is attached (the
+           * ThunderID marketing panel goes away), so the left panel is drawn here as
+           * body::before / body::after. Text only, no image: ThunderID's CSS sanitiser
+           * rewrites url(data:...) to url(about:...), and any http(s) image would need
+           * the server-wide CSP changed. The logo is the card's own <img> (logoUrl).
+           * Selectors are ThunderID's MUI class names, so they can shift with a ThunderID
+           * upgrade -- the same trade the AMP console's layout makes.
+           */
+          :root { --apex-blue: #0050cb; --apex-glow: rgba(30,111,255,0.16); --apex-slate: rgba(71,85,105,0.14); --apex-page: #f3f4f6; --apex-panel: #e9edf5; --apex-ink: #0b1c30; --apex-muted: #424656; --apex-card: #ffffff; --apex-line: rgba(11,28,48,0.08); }
+          [data-color-scheme="dark"] { --apex-blue: #4d8dff; --apex-glow: rgba(30,111,255,0.26); --apex-slate: rgba(100,116,139,0.24); --apex-page: #07090d; --apex-panel: #0b1120; --apex-ink: #e6ecf7; --apex-muted: #b3bdd1; --apex-card: #11151d; --apex-line: rgba(255,255,255,0.08); }
+          body { margin: 0 !important; min-height: 100vh !important; background-color: var(--apex-page) !important; background-image: radial-gradient(circle at 65% 30%, var(--apex-glow) 10%, transparent 40%), radial-gradient(circle at 15% 70%, var(--apex-slate) 1%, transparent 45%) !important; background-attachment: fixed !important; display: grid !important; grid-template-columns: 1fr !important; }
+          body::before, body::after { display: none; }
+          @media (min-width: 900px) {
+            body { grid-template-columns: minmax(380px, 1fr) minmax(460px, 1fr) !important; }
+            body::before { content: "ApexBank"; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 40px; box-sizing: border-box; font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; color: var(--apex-ink); background-color: var(--apex-panel); background-image: radial-gradient(700px 420px at 0% 0%, var(--apex-glow), transparent 60%), radial-gradient(600px 400px at 100% 100%, var(--apex-slate), transparent 60%); background-repeat: no-repeat; border-right: 1px solid var(--apex-line); }
+            body::after { content: "Your money, just a question away."; display: block; position: fixed; left: 0; width: 50%; top: calc(50% + 12px); padding: 0 48px; box-sizing: border-box; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--apex-muted); pointer-events: none; }
+          }
+          .MuiPaper-root { max-width: 420px !important; width: 100% !important; margin: auto !important; padding: 40px 36px !important; border-radius: 12px !important; background-color: var(--apex-card) !important; border: 1px solid var(--apex-line) !important; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 40px rgba(15,23,42,0.08) !important; }
+          [data-color-scheme="dark"] .MuiPaper-root { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 16px 48px rgba(0,0,0,0.5) !important; }
+          .MuiPaper-root img { display: block !important; max-height: 48px !important; width: auto !important; margin: 0 auto 20px !important; }
+          [data-color-scheme="dark"] .MuiPaper-root img { filter: brightness(2.2) !important; }
+          .MuiPaper-root h1, .MuiPaper-root .MuiTypography-h1 { text-align: center !important; font-size: 1.5rem !important; font-weight: 600 !important; letter-spacing: -0.01em !important; color: var(--apex-ink) !important; margin: 0 0 8px !important; }
+          .MuiPaper-root .MuiOutlinedInput-root { border-radius: 8px !important; }
+          .MuiPaper-root .MuiButton-root { border-radius: 20px !important; text-transform: none !important; font-weight: 500 !important; height: 44px !important; box-shadow: none !important; }
+          .MuiPaper-root .MuiButton-containedPrimary:not(:disabled) { background: linear-gradient(90deg, #1a66e0 0%, #0040a8 100%) !important; color: #fff !important; }
+          .MuiPaper-root .MuiButton-containedPrimary:not(:disabled):hover { opacity: 0.92 !important; }
+          .MuiPaper-root a { color: var(--apex-blue) !important; }
+  screens:
+    signin:
+      title: "Sign in to ApexBank"
+      layout: split
+    common:
+      layout: split
+---
+# One resource server, and every permission the system defines. It has to be
+# one: a delegated exchange may only narrow the subject token's scopes, and a
+# token only holds scopes of the single resource server it was issued for (see
+# init/thunder/80-apex-resource-servers.yaml for the full reasoning).
+#
+# Permission strings are derived from the tree: `delimiter` joins each node's
+# handle to its parent's, so apex > bank > accounts > read is
+# "apex:bank:accounts:read". Every leaf is an action (a verb).
+resource_type: resource_server
+id: apex-resource-server
+name: Apex API
+description: Every Apex permission -- bank, assistant, tool surface and consent portal
+identifier: "urn:apex"
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+delimiter: ":"
+resources:
+  - { name: Apex, handle: apex, description: "Top-level namespace for Apex permissions" }
+
+  # --- The bank's own APIs ----------------------------------------------
+  - { name: Bank, handle: bank, parent: "apex", description: "Bank resource APIs" }
+  - name: Accounts
+    handle: accounts
+    parent: "apex:bank"
+    description: "Customer accounts"
+    actions:
+      - { name: Read, handle: read, description: "List accounts and their details" }
+  - name: Balances
+    handle: balances
+    parent: "apex:bank:accounts"
+    description: "Account balances"
+    actions:
+      - { name: Read, handle: read, description: "Read account balances" }
+  - name: Transactions
+    handle: transactions
+    parent: "apex:bank:accounts"
+    description: "Account transaction history"
+    actions:
+      - { name: Read, handle: read, description: "Read transaction history" }
+  - name: Payees
+    handle: payees
+    parent: "apex:bank"
+    description: "Saved payees"
+    actions:
+      - { name: Read, handle: read, description: "List saved payees" }
+  - name: Payments
+    handle: payments
+    parent: "apex:bank"
+    description: "Payment initiation"
+    actions:
+      - { name: Write, handle: write, description: "Initiate a payment" }
+
+  # --- The assistant ------------------------------------------------------
+  - { name: Agent, handle: agent, parent: "apex", description: "AI banking assistant" }
+  - name: Chat
+    handle: chat
+    parent: "apex:agent"
+    description: "Conversations with the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read conversation state" }
+      - { name: Write, handle: write, description: "Send a message to the assistant" }
+
+  # --- The MCP tool surface -----------------------------------------------
+  # Nested under mcp, reusing handles the bank also has. The hosted build
+  # allows that, provided every `parent:` that would be ambiguous is a full
+  # path -- so all parents in this file are full paths.
+  - { name: MCP, handle: mcp, parent: "apex", description: "MCP tool surface" }
+  - name: Accounts
+    handle: accounts
+    parent: "apex:mcp"
+    description: "Accounts through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read accounts through the assistant" }
+  - name: Transactions
+    handle: transactions
+    parent: "apex:mcp"
+    description: "Transactions through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read transactions through the assistant" }
+  - name: Payees
+    handle: payees
+    parent: "apex:mcp"
+    description: "Saved payees through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read saved payees through the assistant" }
+  - name: Payments
+    handle: payments
+    parent: "apex:mcp"
+    description: "Payments through the assistant"
+    actions:
+      - { name: Write, handle: write, description: "Initiate a payment through the assistant" }
+
+  # --- The consent portal ---------------------------------------------------
+  - { name: Portal, handle: portal, parent: "apex", description: "Consent portal" }
+  - name: Consents
+    handle: consents
+    parent: "apex:portal"
+    actions:
+      - { name: Read, handle: read, description: "View granted consents" }
+      - { name: Revoke, handle: revoke, description: "Revoke a granted consent" }
+---
+# Passkey enrolment for an EXISTING customer, driven by the portal.
+#
+# It does NOT authenticate. It identifies, and then registers.
+#
+# The obvious shape was to prompt for a password here, the way the payment
+# step-up falls back to one -- and that is what this flow used to do. But the
+# ceremony has to run at the PORTAL's origin (the credential must bind to
+# `portal.apex.localhost`, or the in-chat payment step-up cannot use it), and
+# ThunderID only collects passwords on its own hosted Gate at a different
+# origin. So a password step here means the customer typing their banking
+# password into a box OUR code renders, and our services forwarding it. That is
+# exactly what federated identity exists to avoid, and it teaches customers the
+# habit that makes phishing work.
+#
+# Instead the portal signs the customer out and back in through ThunderID
+# first, so the password is typed on ThunderID's page, and the relay proves it
+# happened from the `auth_time` claim on the resulting ID token before starting
+# this flow. IdentifyingExecutor then just names the user.
+#
+# Nothing is weakened by dropping the password: the flow can only be started by
+# something holding the Flow Secret, and the relay that holds it takes the
+# username from a verified token and refuses to start unless the customer
+# authenticated moments ago.
+#
+# relyingPartyId is the portal host EXACTLY. A parent like apex.localhost would
+# let a later second host reuse the same credential, but Chrome refuses it:
+# `.localhost` is not a registrable domain there, so the parent is neither equal
+# to nor a registrable suffix of the origin, and the ceremony dies with
+# SecurityError before the authenticator is ever consulted. Every credential
+# binds to this value permanently, so changing it later means re-enrolling
+# everyone.
+resource_type: flow
+id: "ddda5996-7a78-5885-8d0a-f5d9fd363cae"
+name: Apex Passkey Enrolment Flow
+handle: apex-passkey-enrol
+flowType: AUTHENTICATION
+nodes:
+- id: start
+  type: START
+  onSuccess: prompt_identity
+- id: prompt_identity
+  type: PROMPT
+  prompts:
+  - inputs:
+    - ref: enrol_username
+      type: TEXT_INPUT
+      identifier: username
+      required: true
+    action:
+      ref: action_identify
+      nextNode: identity_resolver
+- id: identity_resolver
+  type: TASK_EXECUTION
+  executor:
+    name: IdentifyingExecutor
+    inputs:
+    - ref: enrol_username
+      type: TEXT_INPUT
+      identifier: username
+      required: true
+  onSuccess: passkey_reg_start
+- id: passkey_reg_start
+  type: TASK_EXECUTION
+  properties:
+    relyingPartyId: "{{.APEX_PASSKEY_RP_ID}}"
+    relyingPartyName: Apex Bank
+  executor:
+    name: PasskeyAuthExecutor
+    mode: register_start
+  onSuccess: passkey_reg_finish
+- id: passkey_reg_finish
+  type: TASK_EXECUTION
+  executor:
+    name: PasskeyAuthExecutor
+    mode: register_finish
+  onSuccess: auth_assert
+- id: auth_assert
+  type: TASK_EXECUTION
+  executor:
+    name: AuthAssertExecutor
+  onSuccess: end
+- id: end
+  type: END
+---
+# Payment step-up: prove the customer is present, right now, for this payment.
+#
+# Driven by the MCP server, not the browser: the challenge travels out through
+# the tool's elicitation, the ceremony runs in the chat box, and the signed
+# response comes back the same way. No model ever sees it.
+#
+# Passkey first. If the customer has not enrolled one, the challenge fails and
+# the flow falls back to a password prompt -- weaker, but it keeps a payment
+# possible on a device with no authenticator rather than dead-ending.
+#
+# Same relyingPartyId as enrolment, and it has to be: a credential is bound to
+# the RP ID rather than to the application that registered it, which is what
+# lets a passkey enrolled through the portal's Security page satisfy a step-up
+# driven by the MCP server. Any mismatch here reads as "no credentials found".
+resource_type: flow
+id: "ea2fb42c-d506-587c-9c0f-109b5363355a"
+name: Apex Payment Step-Up Flow
+handle: apex-payment-stepup
+flowType: AUTHENTICATION
+nodes:
+- id: start
+  type: START
+  onSuccess: prompt_identity
+- id: prompt_identity
+  type: PROMPT
+  prompts:
+  - inputs:
+    - ref: stepup_username
+      type: TEXT_INPUT
+      identifier: username
+      required: true
+    action:
+      ref: action_identify
+      nextNode: identity_resolver
+- id: identity_resolver
+  type: TASK_EXECUTION
+  executor:
+    name: IdentifyingExecutor
+    inputs:
+    - ref: stepup_username
+      type: TEXT_INPUT
+      identifier: username
+      required: true
+  onSuccess: passkey_challenge
+- id: passkey_challenge
+  type: TASK_EXECUTION
+  properties:
+    relyingPartyId: "{{.APEX_PASSKEY_RP_ID}}"
+    relyingPartyName: Apex Bank
+  executor:
+    name: PasskeyAuthExecutor
+    mode: challenge
+  onSuccess: passkey_verify
+  onFailure: prompt_password_fallback
+- id: passkey_verify
+  type: TASK_EXECUTION
+  executor:
+    name: PasskeyAuthExecutor
+    mode: verify
+  onSuccess: auth_assert
+- id: prompt_password_fallback
+  type: PROMPT
+  prompts:
+  - inputs:
+    - ref: stepup_password
+      type: PASSWORD_INPUT
+      identifier: password
+      required: true
+    action:
+      ref: action_password
+      nextNode: password_fallback
+- id: password_fallback
+  type: TASK_EXECUTION
+  executor:
+    name: CredentialsAuthExecutor
+    inputs:
+    - ref: stepup_username
+      type: TEXT_INPUT
+      identifier: username
+      required: true
+    - ref: stepup_password
+      type: PASSWORD_INPUT
+      identifier: password
+      required: true
+  onSuccess: auth_assert
+- id: auth_assert
+  type: TASK_EXECUTION
+  executor:
+    name: AuthAssertExecutor
+  onSuccess: end
+- id: end
+  type: END
+---
+# The customer's login, shared by the bank portal and the consent portal.
+#
+# It exists for one reason: **SSO in ThunderID is per FLOW, not per server.**
+# "A session belongs to exactly one flow. Every application that authenticates
+# through the same flow shares that flow's session. Two different flows never
+# share a session." Both portals already used the default flow, but that flow
+# has no session nodes, so the second portal re-prompted a customer who had
+# just signed in to the first.
+#
+# DERIVED FROM the built-in default flow rather than written from scratch. A
+# PROMPT node carries the `meta.components` that ThunderID's hosted sign-in
+# page renders from; a hand-written node with only `inputs` is valid, drives an
+# app-native flow perfectly well, and renders a COMPLETELY BLANK sign-in page.
+# Regenerate with: GET /flows/01900000-0000-7000-8000-000000000061, then insert
+# the two SSO nodes below.
+#
+# It does NOT enrol a passkey, and cannot. Enrolment through the hosted Gate
+# works only when relyingPartyId equals the GATE's origin
+# (thunder.amp.localhost) -- verified: the ceremony completes and a credential
+# appears. But a credential is bound to exactly one RP ID, and the in-chat
+# payment step-up runs at portal.apex.localhost, so it needs that RP ID
+# instead. The two origins share no registrable parent Chrome will accept
+# (`.localhost` is refused), and the Gate's own URL is fixed in the
+# AMP-managed deployment rather than configurable here. So Gate-hosted
+# enrolment and in-chat step-up cannot share a passkey in this topology.
+#
+# Two nodes make the difference, and they have to bracket the step being
+# skipped:
+#   * SSOCheckExecutor -- can the following authentication be skipped?
+#     onSuccess jumps past it; onFailure runs it. `checkpointRef` names its
+#     paired Session node and is required (FLM-1023 without it).
+#   * SessionExecutor -- the checkpoint. On a fresh sign-in it establishes the
+#     session and saves what was just completed; on a reused one it loads it.
+# Both the skip path and the authenticate path converge on the SessionExecutor,
+# or a reused session never loads the user and everything downstream sees
+# nobody.
+#
+# Hosted build: the "Forgot password?" and "Sign up" links, their prompt
+# actions and the two CALL nodes behind them are removed. They called the
+# built-in recovery/registration flows by their fresh-install ids, which do
+# not exist on the hosted instance, and an app whose auth flow CALLs a missing
+# flow fails to save with APP-1007 "Invalid auth flow ID". Customers are
+# onboarded by the bank, so there is no self sign-up; recovery can come back
+# by pointing a CALL node at a recovery flow that exists on this instance.
+{
+  "resource_type": "flow",
+  "id": "8cf50a09-7053-53dd-891d-7d60531114d9",
+  "name": "Apex Customer Login Flow",
+  "handle": "apex-login",
+  "flowType": "AUTHENTICATION",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "START",
+      "layout": {
+        "size": {
+          "width": 101,
+          "height": 34
+        },
+        "position": {
+          "x": 248,
+          "y": 711
+        }
+      },
+      "onSuccess": "sso_check"
+    },
+    {
+      "id": "sso_check",
+      "type": "TASK_EXECUTION",
+      "properties": {
+        "checkpointRef": "session_save"
+      },
+      "executor": {
+        "name": "SSOCheckExecutor"
+      },
+      "onSuccess": "session_save",
+      "onFailure": "prompt_credentials"
+    },
+    {
+      "id": "prompt_credentials",
+      "type": "PROMPT",
+      "layout": {
+        "size": {
+          "width": 350,
+          "height": 834
+        },
+        "position": {
+          "x": 562,
+          "y": 312
+        }
+      },
+      "meta": {
+        "components": [
+          {
+            "alt": "{{ t(signin:images.app_logo.alt) }}",
+            "category": "DISPLAY",
+            "height": "60",
+            "id": "image",
+            "resourceType": "ELEMENT",
+            "src": "{{ meta(application.logoUrl) }}",
+            "type": "IMAGE",
+            "width": ""
+          },
+          {
+            "align": "center",
+            "id": "text_001",
+            "label": "{{ t(signin:forms.credentials.title) }}",
+            "type": "TEXT",
+            "variant": "HEADING_1"
+          },
+          {
+            "components": [
+              {
+                "id": "input_001",
+                "label": "{{ t(signin:forms.credentials.fields.username.label) }}",
+                "placeholder": "{{ t(signin:forms.credentials.fields.username.placeholder) }}",
+                "ref": "username",
+                "required": true,
+                "type": "TEXT_INPUT"
+              },
+              {
+                "id": "input_002",
+                "label": "{{ t(signin:forms.credentials.fields.password.label) }}",
+                "placeholder": "{{ t(signin:forms.credentials.fields.password.placeholder) }}",
+                "ref": "password",
+                "required": true,
+                "type": "PASSWORD_INPUT"
+              },
+              {
+                "eventType": "SUBMIT",
+                "id": "action_001",
+                "label": "{{ t(signin:forms.credentials.actions.submit.label) }}",
+                "type": "ACTION",
+                "variant": "PRIMARY"
+              }
+            ],
+            "id": "block_001",
+            "type": "BLOCK"
+          }
+        ]
+      },
+      "prompts": [
+        {
+          "inputs": [
+            {
+              "ref": "input_001",
+              "type": "TEXT_INPUT",
+              "identifier": "username",
+              "required": true
+            },
+            {
+              "ref": "input_002",
+              "type": "PASSWORD_INPUT",
+              "identifier": "password",
+              "required": true
+            }
+          ],
+          "action": {
+            "ref": "action_001",
+            "nextNode": "credentials_auth"
+          }
+        }
+      ]
+    },
+    {
+      "id": "credentials_auth",
+      "type": "TASK_EXECUTION",
+      "layout": {
+        "size": {
+          "width": 217,
+          "height": 113
+        },
+        "position": {
+          "x": 1283,
+          "y": 470
+        }
+      },
+      "executor": {
+        "name": "CredentialsAuthExecutor"
+      },
+      "onSuccess": "session_save",
+      "onIncomplete": "prompt_credentials"
+    },
+    {
+      "id": "session_save",
+      "type": "TASK_EXECUTION",
+      "executor": {
+        "name": "SessionExecutor"
+      },
+      "onSuccess": "authorization_check"
+    },
+    {
+      "id": "authorization_check",
+      "type": "TASK_EXECUTION",
+      "layout": {
+        "size": {
+          "width": 200,
+          "height": 113
+        },
+        "position": {
+          "x": 1774,
+          "y": 470
+        }
+      },
+      "executor": {
+        "name": "AuthorizationExecutor"
+      },
+      "onSuccess": "auth_assert"
+    },
+    {
+      "id": "auth_assert",
+      "type": "TASK_EXECUTION",
+      "layout": {
+        "size": {
+          "width": 244,
+          "height": 113
+        },
+        "position": {
+          "x": 2168,
+          "y": 469
+        }
+      },
+      "executor": {
+        "name": "AuthAssertExecutor"
+      },
+      "onSuccess": "end"
+    },
+    {
+      "id": "end",
+      "type": "END",
+      "layout": {
+        "size": {
+          "width": 85,
+          "height": 34
+        },
+        "position": {
+          "x": 2527,
+          "y": 509
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "ai-banking-mock-backend",
+  "version": "1.0.0",
+  "description": "Mock banking backend for the Apex AI banking assistant",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5"
+  },
+  "license": "Apache-2.0"
+}

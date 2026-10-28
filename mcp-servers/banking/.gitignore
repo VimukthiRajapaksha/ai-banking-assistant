@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local env files (secrets) -- .env.example stays tracked
+.env
+.env.staging
+.env.production
+
+# All local env variants (secrets); .env.example stays tracked
+.env*
+!.env.example

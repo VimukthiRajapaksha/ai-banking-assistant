@@ -1,0 +1,1 @@
+"""AI Banking MCP server."""

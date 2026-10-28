@@ -1,0 +1,180 @@
+# Apex Bank -- hosted ThunderID bundle. Step 2: applications and the agent.
+# Import with apex-thunderid.env. Order: README.md.
+---
+resource_type: application
+id: apex-security-client
+type: fullstack
+# The console's Type column shows `template`, not `type`. `-embedded`: an app
+# with no OAuth profile, started server-side with its flow secret.
+template: server-embedded
+name: Apex Bank Passkey Enrolment
+description: Registers a customer's passkey; started by the assistant on the customer's behalf
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+authFlowHandle: apex-passkey-enrol
+flowSecret: "{{.APEX_SECURITY_FLOW_SECRET}}"
+---
+resource_type: application
+id: apex-portal-client
+type: browser
+template: browser
+name: Apex Bank Customer Portal
+description: Sign-in for customers of the web banking portal and its AI assistant
+logoUrl: "data:image/png;base64,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"
+themeId: apex-theme
+layoutId: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+authFlowHandle: apex-login
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-portal-client
+      redirectUris:
+        - "{{.APEX_PORTAL_ORIGIN}}/oauth/callback"
+      postLogoutRedirectUris:
+        - "{{.APEX_PORTAL_ORIGIN}}"
+      grantTypes: ["authorization_code", "refresh_token"]
+      responseTypes: ["code"]
+      tokenEndpointAuthMethod: "none"
+      pkceRequired: true
+      publicClient: true
+      scopes:
+        - openid
+        - profile
+        - email
+        - "apex:agent:chat:read"
+        - "apex:agent:chat:write"
+        - "apex:bank:accounts:read"
+        - "apex:bank:accounts:balances:read"
+        - "apex:bank:accounts:transactions:read"
+        - "apex:bank:payees:read"
+        - "apex:bank:payments:write"
+        - "apex:mcp:accounts:read"
+        - "apex:mcp:transactions:read"
+        - "apex:mcp:payees:read"
+        - "apex:mcp:payments:write"
+      token:
+        accessToken:
+          userConfig:
+            validityPeriod: 3600
+            attributes: ["username", "email", "given_name", "family_name", "ouId", "ouHandle"]
+        idToken:
+          validityPeriod: 3600
+          userAttributes: ["username", "email", "given_name", "family_name"]
+---
+resource_type: application
+id: apex-mcp-client
+type: custom
+template: custom
+name: Apex Bank MCP Server
+description: Banking tools for the AI assistant; runs the passkey check before a payment
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+authFlowHandle: apex-payment-stepup
+flowSecret: "{{.APEX_MCP_FLOW_SECRET}}"
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-mcp-client
+      clientSecret: "{{.APEX_MCP_CLIENT_SECRET}}"
+      grantTypes: ["client_credentials", "urn:ietf:params:oauth:grant-type:token-exchange"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      publicClient: false
+      scopes:
+        - openid
+        - "apex:bank:accounts:read"
+        - "apex:bank:accounts:balances:read"
+        - "apex:bank:accounts:transactions:read"
+        - "apex:bank:payees:read"
+        - "apex:bank:payments:write"
+      token:
+        accessToken:
+          clientConfig:
+            validityPeriod: 3600
+            attributes: ["ouId", "ouHandle"]
+---
+resource_type: application
+id: apex-consent-portal-client
+type: custom
+template: custom
+name: Apex Bank Consent Portal
+description: Where customers review and revoke the access they have granted
+logoUrl: "data:image/png;base64,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"
+themeId: apex-theme
+layoutId: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+authFlowHandle: apex-login
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-consent-portal-client
+      clientSecret: "{{.APEX_CONSENT_PORTAL_CLIENT_SECRET}}"
+      redirectUris:
+        - "{{.APEX_CONSENT_PORTAL_ORIGIN}}/auth/callback"
+      postLogoutRedirectUris:
+        - "{{.APEX_CONSENT_PORTAL_ORIGIN}}/"
+      grantTypes: ["authorization_code", "refresh_token"]
+      responseTypes: ["code"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      publicClient: false
+      scopes:
+        - openid
+        - profile
+        - email
+        - "portal:consents:read:self"
+        - "portal:consents:write:self"
+        - "portal:elements:read"
+        - "portal:purposes:read"
+      scopeClaims:
+        "portal:consents:read:self": []
+        "portal:consents:write:self": []
+        "portal:elements:read": []
+        "portal:purposes:read": []
+      token:
+        accessToken:
+          userConfig:
+            validityPeriod: 3600
+          defaultAudience: "urn:apex:consent-portal"
+        idToken:
+          validityPeriod: 3600
+          userAttributes: ["username", "email", "given_name", "family_name"]
+---
+# The assistant -- one client. It authenticates as itself (client_credentials,
+# for its actor token) AND performs the delegated exchange, so its id is both
+# the exchange's client and `act.sub` on the result. Replaces the local stack's
+# separate `apex-agent-client` application.
+#
+# includeActClaim is the whole point: without it the exchanged token carries no
+# `act` claim and the agent vanishes from the provenance chain.
+resource_type: agent
+id: apex-banking-agent
+ouId: "fe34718f-3844-5d09-9abb-fde9cfee972a"
+type: default
+name: Apex Bank AI Assistant
+description: The AI assistant; acts for a signed-in customer within what they consented to
+# The built-in agent schema's three optional attributes. `model` is the agent's
+# configured default (AGENT_LLM__MODEL); keep the two in step.
+attributes:
+  modelProvider: anthropic
+  model: claude-haiku-4-5-20251001
+  function: assistant
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-banking-agent
+      clientSecret: "{{.APEX_AGENT_IDENTITY_SECRET}}"
+      grantTypes: ["client_credentials", "urn:ietf:params:oauth:grant-type:token-exchange"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      includeActClaim: true
+      scopes:
+        - openid
+        - "apex:mcp:accounts:read"
+        - "apex:mcp:transactions:read"
+        - "apex:mcp:payees:read"
+        - "apex:mcp:payments:write"
+      token:
+        accessToken:
+          userConfig:
+            validityPeriod: 3600
+            attributes: ["username", "email", "given_name", "family_name", "ouId", "ouHandle"]
+          clientConfig:
+            validityPeriod: 3600
+            attributes: ["ouId", "ouHandle"]
