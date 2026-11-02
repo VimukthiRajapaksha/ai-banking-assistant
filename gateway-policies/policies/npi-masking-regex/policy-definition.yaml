@@ -1,0 +1,133 @@
+name: npi-masking-regex
+displayName: NPI Masking Regex
+version: v0.1.0
+description: |
+  Masks banking Nonpublic Personal Information (NPI) in LLM requests and
+  restores it in LLM responses. Values are found by the JSON key that holds
+  them, by a verifiable format (IBAN, card number, E.164 phone, email), or by
+  the label in front of them in text. Only the value is replaced, so a
+  placeholder the LLM copies into a tool call is restored to the real value
+  before the agent sees it.
+
+parameters:
+  type: object
+  properties:
+    mode:
+      type: string
+      x-wso2-policy-advanced-param: false
+      description: |
+        "enforce" masks requests and restores responses. "monitor" only
+        detects and logs entity counts, forwarding traffic unchanged.
+      enum:
+        - enforce
+        - monitor
+      default: enforce
+    onError:
+      type: string
+      x-wso2-policy-advanced-param: false
+      description: |
+        What to do with a request body that cannot be inspected. "block"
+        rejects it, so unmasked NPI never reaches the LLM. "passThrough"
+        forwards it unmasked and logs a warning.
+      enum:
+        - block
+        - passThrough
+      default: block
+    labelledText:
+      type: boolean
+      x-wso2-policy-advanced-param: true
+      description: |
+        Specifies whether key-based entities are also detected in free text by
+        their label, for example "Account number: 40031122". Only the value
+        after the label is masked.
+      default: true
+    entities:
+      type: array
+      x-wso2-policy-advanced-param: true
+      description: |
+        Overrides for the built-in entities. Every built-in entity is enabled
+        by default; an entity not listed here keeps its defaults.
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Built-in entity name.
+            enum:
+              - ACCOUNT_NUMBER
+              - ACCOUNT_ID
+              - CARD_NUMBER
+              - CARD_EXPIRY
+              - CARD_CVV
+              - IBAN
+              - CUSTOMER_ID
+              - NATIONAL_ID
+              - PASSPORT_NUMBER
+              - DATE_OF_BIRTH
+              - PHONE
+              - EMAIL
+              - ADDRESS
+          enabled:
+            type: boolean
+            description: Specifies whether the entity is detected.
+            default: true
+          action:
+            type: string
+            description: |
+              "mask" replaces the value with a placeholder restored in the
+              response. "redact" replaces it with "*****" and never restores it.
+            enum:
+              - mask
+              - redact
+          additionalKeys:
+            type: array
+            description: Extra JSON keys that identify this entity.
+            items:
+              type: string
+        required:
+          - name
+    customEntities:
+      type: array
+      x-wso2-policy-advanced-param: true
+      description: |
+        Deployment-specific entities. Each is found by its JSON keys, by an
+        optional value regex (Go RE2), or both.
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: |
+              Entity name, used in placeholders. Uppercase letters and
+              underscores only, and different from every built-in name.
+            pattern: "^[A-Z][A-Z_]*$"
+          keys:
+            type: array
+            description: JSON keys that identify this entity.
+            items:
+              type: string
+          valueRegex:
+            type: string
+            description: |
+              Optional Go RE2 pattern for the value. When set, the value is
+              also detected anywhere by its format.
+          action:
+            type: string
+            enum:
+              - mask
+              - redact
+            default: mask
+        required:
+          - name
+
+systemParameters:
+  type: object
+  properties:
+    hmacKey:
+      type: string
+      description: |
+        Key used to derive deterministic placeholders. When empty, a random
+        per-process key is used, so placeholders differ across replicas and
+        restarts (restoration is unaffected).
+      default: ""
+      "wso2/defaultValue": "${config.npi_masking_regex_hmac_key}"

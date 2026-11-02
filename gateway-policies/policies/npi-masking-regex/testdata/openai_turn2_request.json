@@ -1,0 +1,55 @@
+{
+  "model": "gpt-4o",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_transactions",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "accountId": {
+              "type": "string",
+              "description": "Account id from get_accounts"
+            },
+            "limit": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "accountId"
+          ]
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Apex."
+    },
+    {
+      "role": "user",
+      "content": "Show my last 10 checking transactions"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_1",
+          "type": "function",
+          "function": {
+            "name": "get_accounts",
+            "arguments": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_1",
+      "content": "[{\"accountId\": \"acc-chk-1120\", \"name\": \"Everyday Checking\", \"type\": \"CURRENT\", \"accountNumber\": \"40031122\", \"iban\": \"GB29NWBK60161331926819\", \"currency\": \"USD\", \"balance\": 8450.32}, {\"accountId\": \"acc-sav-8842\", \"name\": \"High-Yield Savings\", \"type\": \"SAVINGS\", \"accountNumber\": \"40038842\", \"currency\": \"USD\", \"balance\": 24310.87}]"
+    }
+  ]
+}

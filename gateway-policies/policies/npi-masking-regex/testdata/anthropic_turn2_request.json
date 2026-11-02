@@ -1,0 +1,61 @@
+{
+  "model": "claude-sonnet-4-5",
+  "max_tokens": 1024,
+  "system": "You are Apex, a banking assistant.",
+  "tools": [
+    {
+      "name": "get_accounts",
+      "description": "List the customer's accounts.",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_transactions",
+      "description": "Recent transactions for one account.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "Account id from get_accounts"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accountId"
+        ]
+      }
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Show my last 10 checking transactions"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_1",
+          "name": "get_accounts",
+          "input": {}
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_1",
+          "content": "[{\"accountId\": \"acc-chk-1120\", \"name\": \"Everyday Checking\", \"type\": \"CURRENT\", \"accountNumber\": \"40031122\", \"iban\": \"GB29NWBK60161331926819\", \"currency\": \"USD\", \"balance\": 8450.32}, {\"accountId\": \"acc-sav-8842\", \"name\": \"High-Yield Savings\", \"type\": \"SAVINGS\", \"accountNumber\": \"40038842\", \"currency\": \"USD\", \"balance\": 24310.87}]"
+        }
+      ]
+    }
+  ]
+}

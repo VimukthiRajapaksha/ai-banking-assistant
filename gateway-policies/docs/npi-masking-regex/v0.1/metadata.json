@@ -1,0 +1,11 @@
+{
+  "name": "npi-masking-regex",
+  "displayName": "NPI Masking Regex",
+  "version": "0.1",
+  "provider": "WSO2",
+  "categories": [
+    "Guardrails",
+    "AI"
+  ],
+  "description": "Masks banking Nonpublic Personal Information (NPI) in LLM requests and restores it in LLM responses.\nValues are found by the JSON key that holds them, by a verifiable format (IBAN, card number, E.164 phone, email), or by the label in front of them in text.\nOnly the value is replaced, so a placeholder the LLM copies into a tool call is restored to the real value before the agent sees it."
+}
