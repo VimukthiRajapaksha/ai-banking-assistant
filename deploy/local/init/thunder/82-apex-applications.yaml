@@ -1,0 +1,247 @@
+# Holds the passkey-enrolment flow, opened from the portal's Security page.
+#
+# A separate application only because ThunderID addresses flows by application:
+# `/flow/execute` takes an applicationId + flowType, and an application holds
+# exactly ONE flow per type. Login already occupies the portal's AUTHENTICATION
+# slot, and enrolment is also AUTHENTICATION. The two escape routes are closed:
+# the REGISTRATION slot rejects CredentialsAuthExecutor (FLM-1023 -- it is for
+# provisioning new users, not adding a factor to an existing one), and invoking
+# a flow by flowId is restricted to administration flows behind a `system`
+# scope, which must never reach a browser.
+#
+# fullstack, not browser: browser applications are refused direct flow
+# initiation (FES-1010), and this flow is driven app-natively by the portal.
+#
+# Subscribed to no API resources: completing enrolment proves a passkey was
+# registered, and grants nothing else.
+resource_type: application
+id: apex-security-client
+type: fullstack
+name: Apex Security
+description: Passkey enrolment for an existing Apex customer
+ouId: "01900000-0000-7000-8000-000000000001"
+authFlowHandle: apex-passkey-enrol
+# No inboundAuthConfig on purpose. resolveFlowInitiationMode refuses direct
+# /flow/execute for any application whose OAuth profile carries
+# authorization_code (those must go through /oauth2/authorize) or is
+# client_credentials-only. An application with no OAuth profile is treated as
+# embedded and initiates flows with a Flow Secret instead.
+#
+# That secret is presented as the `Flow-Secret` header and is a SERVER
+# credential -- it never reaches client-side JavaScript. So the portal's
+# Security page cannot call ThunderID itself; it asks our own backend, which
+# holds this secret, to start the enrolment and relays each step to the browser.
+flowSecret: "{{.APEX_SECURITY_FLOW_SECRET}}"
+---
+# Bank customer portal (React/Vite SPA).
+#
+# Public redirect client: authorization_code + PKCE, no secret. That grant is
+# also what makes it unable to initiate flows directly -- it authenticates
+# through /oauth2/authorize like any browser app.
+resource_type: application
+id: apex-portal-client
+type: browser
+name: Apex Bank Portal
+description: Bank customer portal
+# ThunderID's hosted sign-in page renders this as the application logo
+# (`{{ meta(application.logoUrl) }}`). A data: URI, not a portal URL: the page
+# runs under ThunderID's server-wide CSP (owned by the AMP install), whose
+# img-src blocks portal.apex.localhost. See 79-apex-branding.yaml.
+logoUrl: "data:image/png;base64,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"
+# Apex look for ThunderID's sign-in page, defined in 79-apex-branding.yaml.
+themeId: apex-theme
+layoutId: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+ouId: "01900000-0000-7000-8000-000000000001"
+# The SAME flow as the consent portal, which is what gives the two of them
+# single sign-on: a ThunderID session belongs to a flow, not to the server, so
+# applications only share a session when they share a flow.
+authFlowHandle: apex-login
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-portal-client
+      redirectUris:
+        - "http://portal.apex.localhost/oauth/callback"
+      # Required for RP-initiated logout: ThunderID rejects any
+      # post_logout_redirect_uri that is not registered here, exactly.
+      postLogoutRedirectUris:
+        - "http://portal.apex.localhost"
+      # No token-exchange. There is one resource server now, so the login token
+      # already carries every scope the chain needs and the portal has nothing
+      # to exchange it for -- it calls both the bank and /chat with the token
+      # it signed in with.
+      grantTypes: ["authorization_code", "refresh_token"]
+      responseTypes: ["code"]
+      tokenEndpointAuthMethod: "none"
+      pkceRequired: true
+      publicClient: true
+      # The scope envelope. A delegated exchange narrows but never widens, so
+      # every scope any downstream hop will need -- the agent's, the MCP
+      # server's, the bank's -- has to be granted here at sign-in or it can
+      # never appear again.
+      scopes:
+        - openid
+        - profile
+        - email
+        - "apex:agent:chat:read"
+        - "apex:agent:chat:write"
+        - "apex:bank:accounts:read"
+        - "apex:bank:accounts:balances:read"
+        - "apex:bank:accounts:transactions:read"
+        - "apex:bank:payees:read"
+        - "apex:bank:payments:write"
+        - "apex:mcp-accounts:read"
+        - "apex:mcp-transactions:read"
+        - "apex:mcp-payees:read"
+        - "apex:mcp-payments:write"
+      token:
+        accessToken:
+          userConfig:
+            validityPeriod: 3600
+            attributes: ["username", "email", "given_name", "family_name", "ouId", "ouHandle"]
+        idToken:
+          validityPeriod: 3600
+          userAttributes: ["username", "email", "given_name", "family_name"]
+---
+# The conversational agent.
+#
+# Confidential, and holds token-exchange so it can act on the customer's behalf
+# without a browser redirect: the customer's token goes in, a token scoped to
+# the MCP API comes out, carrying the customer as subject and this agent as
+# actor.
+resource_type: application
+id: apex-agent-client
+type: custom
+name: Apex Banking Agent
+description: AI banking assistant
+ouId: "01900000-0000-7000-8000-000000000001"
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-agent-client
+      clientSecret: "{{.APEX_AGENT_CLIENT_SECRET}}"
+      grantTypes: ["client_credentials", "urn:ietf:params:oauth:grant-type:token-exchange"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      publicClient: false
+      scopes:
+        - openid
+        - "apex:mcp-accounts:read"
+        - "apex:mcp-transactions:read"
+        - "apex:mcp-payees:read"
+        - "apex:mcp-payments:write"
+      token:
+        accessToken:
+          # userConfig applies to the DELEGATED token this client mints for the
+          # MCP server. `username` has to be on it: the payment step-up
+          # identifies the customer to ThunderID by username, and the only
+          # trustworthy source for that is the verified token -- taking it from
+          # a tool argument would let the model choose whose payment to
+          # authorise.
+          userConfig:
+            validityPeriod: 3600
+            attributes: ["username", "email", "given_name", "family_name", "ouId", "ouHandle"]
+          clientConfig:
+            validityPeriod: 3600
+            attributes: ["ouId", "ouHandle"]
+---
+# The MCP server.
+#
+# Also owns the payment step-up flow (authFlowHandle): ThunderID addresses a
+# flow by application, and this is the service that drives it. No
+# authorization_code grant, and more than client_credentials alone, so it
+# resolves to Flow-Secret initiation rather than being refused (FES-1010).
+resource_type: application
+id: apex-mcp-client
+type: custom
+name: Apex MCP Server
+description: Banking tools, and the payment step-up ceremony
+ouId: "01900000-0000-7000-8000-000000000001"
+authFlowHandle: apex-payment-stepup
+flowSecret: "{{.APEX_MCP_FLOW_SECRET}}"
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-mcp-client
+      clientSecret: "{{.APEX_MCP_CLIENT_SECRET}}"
+      grantTypes: ["client_credentials", "urn:ietf:params:oauth:grant-type:token-exchange"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      publicClient: false
+      scopes:
+        - openid
+        - "apex:bank:accounts:read"
+        - "apex:bank:accounts:balances:read"
+        - "apex:bank:accounts:transactions:read"
+        - "apex:bank:payees:read"
+        - "apex:bank:payments:write"
+      token:
+        accessToken:
+          clientConfig:
+            validityPeriod: 3600
+            attributes: ["ouId", "ouHandle"]
+---
+# Consent portal BFF.
+resource_type: application
+id: apex-consent-portal-client
+type: custom
+name: Apex Consent Portal
+description: Where a customer reviews and revokes consents
+logoUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAHPUlEQVR4nO2di3MURRDGB/CJ7ydGI2d2pntm1yQ+ThRQCPJGHiKgiAqCoiiCiqIg8kYUouIDkPhA/lXr076qVDDJ3W3f3e7dfFVXVEHtTM9vd3t7enoGY6KioqKioqKioqKioqKioqKiotqoarU6m4gWOedGvPcvMvMyIlrunFvJzKuJ6CXn3Drv/QZm3khEm5xzW5j5NWbeSkTbvPdveu9fZeYX0BYRLUZ7aZou9t4vTNP08RDCfZ0eayGVpmklL3xm3k5Ea8fD994vkTaX1tq11ladczd3esyFEjPPU4D/9sDAwPKp4DvnVqDtEMJIpVK5pdPjLoSGh4dv04BPRDsBfTr43vtVaB9uyRgzw/S6mHkgL3zn3C78W73wmXkNfkmSzDW9LufcfAX478o1dcNHP3BXptfdDynAJ6L3QggrGoS/Vvq6w/SqiCjRgI8/m4S/3nvvTa/KWrswL3wi2iPxfzPw0d8y04vKsux2Jfgf4Pom4b+MPp1zd5peU5ZlTgM+M+8NIaxsFj4RvUJEqek1yYRpXV74+Puc8NHvStNr7kcDPhHtk/g/D/zN3vstPeWGQgisAZ+IPkY7eeHjI45knekVSci4MS98Zv4Qybe88KX/NaYXhImPEvxPBXKmAB/9v54kyV2m28XMQQM+M3+WJMngwMDAHA34YsOQ6XZJxJIbPhEdxMd8ZGTkhtp8Ig9859wbuM50sxBpaMH33u+akNDLCx92vFWpVO423Srx17nhM/OXyHzW2rXWOg34YssTplslH8vc8Jn5MJYxa+3iqVWCvwPXmm4UIgwt+ER00Bgza1zzM+Tm5oJfW1nrSjcUQhhUgv8VYE5s33v/jAZ82JSm6VOm24QoRQM+EX0N2BPbz7JsrgZ87/073vvNptvcjxZ8Zj42NDR0z8Q++vv7b9WAD7uYeff/9VFaMfOwFnwi2j9ZP0jKacDHL4RQNd0iRCca8Jn5BFzZVDdaA74sc173nSmlEFEowj811RpulmUPacAnovdhY5Zl95qyi4ieVIR/Msuym6bobhZckAZ8sXGeKbsQmWjAZ+YzADZdf9baJUrwkereZsrufrTgM/PZegqpkG3VgA87mfmjUruhEMLTivC/g4+frk9JS6jAF1ufM2WV+GMV+ER0tN5iWswHlODvt9ZuN2UUJjKK8M83Ehai8lkDvqw5f1LKjR1IFyjC/76RNDEqrrXgw+YQwgJTNiEW14LPzKMo5K23b+yAqc098sJn5gO4kaZMQuSgCP8HtNGoDc659Rrwxe7Pmfl+UxZhAqMI/4K1dnWjNiCXowVfbH/elEWIw7XgE9HP3vvHGrVB0hIq8InoC9xMU6LoRxP+OWPMzCZMmSkfYg34sP9QKdwQJi5a8Jn5V+fctOmHyYSSRUX4GMMiU3TJwrYKfCK6ZK1dkKcKQxE+xrDHlCD6UYNPRJfzlAvKSpwW/CMyjuK6IUxYFOH/huvy2iR5IRX4SIdgk7cpqiTvrwV/DOu7eW1CBlULvoxlrymw+1GDz8x/ILWssRNTEf5xjMc594ApmjBR0YRPRJdReJvXLqygyRugAh+/8WWRhZFMeLTg/9VM+mEyoSBYCz4RnZyqMqMjQrpWGf5Vzf27RPSsIvxTRHQ6SZIHTVEkZ/Rowr+mOcDBwcE5mvBlbEtNUYTEF04qgVHYgCF7ttbUdkJiYR4RDRZVULEwrkpuJzKWtWXLWgZV3MUBCWkPCRxAOT7u5n5LROdkreDHcTf1MjNfqd1QZr5qrV0li+xa8L/BG2WKoL6+vtkFhj+GshjYCXsU4Z+FDYVwQ8hUFhE+EV1Awe44O4c04YtrXV6I5FvR4Hvvj05MYcjZFJrwz8k+hc6f91Mk+My8d7LqOVmg0YKPwGIUuzRNp4RZZoHg/4nC3KlKV8RVqsGHPTgopL3Ur5/9dhy+c26snsoFSUuowUdYDbtNJyQ+tePw6b9Vs7pOvUJqwzl3SAu+2HShUqlMW7GnrjRNqQDwTzean8d6tSZ8IvoJGwRbR3rygYx0Ej4zH8C2pEbtDiHM14Qvb+AR0+4DNzr85O+YsE21bmHypAmfmX+BffUUDqsJPrdD8Mc0Jj9ihxp8Zr441dapVh240W74F7EHTMN+2U+sCf8SxmLaeOBGW+ET0Xlr7aNaY5C0hBp82Imsbgihz7RaSZJQm5/8w9qn2yKB6L0/rQmfiK6EENaZVguLG22Ev7tard7YinFIqYoafPk+nTLtSL61Gr73HoPa1Mrj5eXcOjX4zPw7IjTv/cOmlcIhpy1+8i/iAKaWDkKKtpxzZzThyw3Y0PIMKG5Ai+CPIl9j2hjNacJHQhAf95YbjuNcWgD/WAf2YuGcoe2K8P9d0yaiR9qVCVWBH0LY18H/02WmnLo4qgGfmf9u26lbzrn+EMJaeRuaffK3Nln/ryq8fdbaDbJsOZoD/jWMt9PjiYqKioqKioqKioqKioqKiooyhdM/E96BkNk+6JEAAAAASUVORK5CYII="
+# Same sign-in branding as the bank portal; they share the sign-in page.
+themeId: apex-theme
+layoutId: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+ouId: "01900000-0000-7000-8000-000000000001"
+# Shares apex-login with the bank portal so a customer who has just signed in
+# there is not asked again here.
+authFlowHandle: apex-login
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-consent-portal-client
+      clientSecret: "{{.APEX_CONSENT_PORTAL_CLIENT_SECRET}}"
+      redirectUris:
+        - "http://portal.consent.apex.localhost/auth/callback"
+      postLogoutRedirectUris:
+        - "http://portal.consent.apex.localhost/"
+      grantTypes: ["authorization_code", "refresh_token"]
+      responseTypes: ["code"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      publicClient: false
+      # The BFF matches these as literal constants in its route policy, so the
+      # names are fixed by it rather than chosen here -- see
+      # `internal/system/auth/scopes.go`.
+      scopes:
+        - openid
+        - profile
+        - email
+        - "portal:consents:read:self"
+        - "portal:consents:write:self"
+        - "portal:elements:read"
+        - "portal:purposes:read"
+      # These four are declared as APPLICATION-OWNED scopes, not resource-server
+      # permissions, and that is what makes the portal work against an
+      # unmodified BFF. The BFF sends RFC 8693 `audience` and not RFC 8707
+      # `resource`; ThunderID ignores `audience`, so a request carrying
+      # resource-server permissions binds to the server-wide
+      # defaultResourceServer and every portal: scope is silently dropped.
+      # Scopes covered by scopeClaims are "not filtered by resource
+      # indicators", so they survive with no `resource` at all.
+      #
+      # Mapped to no claims: these authorise routes, they do not release user
+      # attributes.
+      scopeClaims:
+        "portal:consents:read:self": []
+        "portal:consents:write:self": []
+        "portal:elements:read": []
+        "portal:purposes:read": []
+      token:
+        accessToken:
+          userConfig:
+            validityPeriod: 3600
+          # With no `resource` on the request and no resource-server permissions
+          # in the grant, this is what the token's `aud` becomes -- and it must
+          # match what the BFF verifies against (BFF_AUTH__RESOURCE_AUDIENCE),
+          # or every call comes back 401.
+          defaultAudience: "urn:apex:consent-portal"
+        idToken:
+          validityPeriod: 3600
+          userAttributes: ["username", "email", "given_name", "family_name"]

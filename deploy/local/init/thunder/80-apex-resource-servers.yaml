@@ -1,0 +1,149 @@
+# One resource server, and every permission the system defines.
+#
+# It was four -- one per service, each with its own audience URN -- and that
+# cannot work on ThunderID. Two documented rules combine to forbid it:
+#
+#   * Resource Indicators: "Requested scopes are filtered to those defined on
+#     the targeted resource server. Scopes not owned by that resource server
+#     are silently dropped." A token may name exactly ONE `resource`.
+#   * Token Exchange: requested scopes "must be a subset of the subject token's
+#     grant" AND "must also be permissions on the target resource server".
+#
+# A delegated exchange that changes resource server therefore has to satisfy
+# both at once, which nothing can: the subject token only holds scopes of the
+# resource server it was issued for. Every hop past the customer's login came
+# back carrying `openid profile email` and nothing else -- an exchange that
+# succeeds while granting nothing, which then surfaces as a 401 three services
+# away. Verified against a live instance before this file was rewritten.
+#
+# So the audience is one value and the permission namespace carries the
+# separation instead: apex:bank:* is the bank, apex:mcp-* the tool surface,
+# apex:agent:* the assistant, apex:portal:* the consent portal. Every
+# permission string is unchanged from when they were four resource servers, so
+# the tool catalog, the APIM scope bindings and the role definitions all still
+# read the same.
+#
+# What this costs: `aud` no longer distinguishes the services, so a token for
+# the MCP server is replayable against the bank as far as the audience check
+# goes. Scope is what separates them now -- which is why every service checks
+# the scope it needs rather than trusting the audience alone.
+#
+# Permission strings are derived from the tree, not written out: `delimiter`
+# joins each node's handle to its parent's, so apex > bank > accounts > read
+# becomes "apex:bank:accounts:read". Every leaf is an action (a verb), which is
+# what keeps a permission legible on its own -- "apex:bank:accounts:balances"
+# would not say whether it grants reading or writing.
+#
+# The identifier is a URN, not a URL. It is effectively immutable, and a URL
+# bakes in a host: the previous IdP's audiences are still frozen at
+# http://localhost:8000 for exactly that reason.
+resource_type: resource_server
+id: apex-resource-server
+name: Apex API
+description: Every Apex permission -- bank, assistant, tool surface and consent portal
+identifier: "urn:apex"
+ouHandle: default
+delimiter: ":"
+resources:
+  - { name: Apex, handle: apex, description: "Top-level namespace for Apex permissions" }
+
+  # --- The bank's own APIs, behind WSO2 API Manager ----------------------
+  - { name: Bank, handle: bank, parent: apex, description: "Bank resource APIs" }
+  - name: Accounts
+    handle: accounts
+    parent: bank
+    description: "Customer accounts"
+    actions:
+      - { name: Read, handle: read, description: "List accounts and their details" }
+  - name: Balances
+    handle: balances
+    parent: accounts
+    description: "Account balances"
+    actions:
+      - { name: Read, handle: read, description: "Read account balances" }
+  - name: Transactions
+    handle: transactions
+    parent: accounts
+    description: "Account transaction history"
+    actions:
+      - { name: Read, handle: read, description: "Read transaction history" }
+  - name: Payees
+    handle: payees
+    parent: bank
+    description: "Saved payees"
+    actions:
+      - { name: Read, handle: read, description: "List saved payees" }
+  - name: Payments
+    handle: payments
+    parent: bank
+    description: "Payment initiation"
+    actions:
+      - { name: Write, handle: write, description: "Initiate a payment" }
+
+  # --- The conversational assistant -------------------------------------
+  - { name: Agent, handle: agent, parent: apex, description: "AI banking assistant" }
+  - name: Chat
+    handle: chat
+    parent: agent
+    actions:
+      - { name: Read, handle: read, description: "Read conversation state" }
+      - { name: Write, handle: write, description: "Send a message to the assistant" }
+
+  # --- The tool surface the assistant calls on the customer's behalf -----
+  # Deliberately a separate namespace from apex:bank:*: what the customer lets
+  # the assistant do is not the same grant as what the bank lets the customer
+  # do, and the MCP server narrows one into the other per tool.
+  #
+  # A resource handle must be unique across the WHOLE resource server
+  # (`IMP-1002 duplicate resource handle 'accounts'`) -- action handles may
+  # repeat, resource handles may not. The bank owns `accounts`, so each tool
+  # resource carries an `mcp-` prefix and sits directly under apex:
+  # apex:mcp-accounts:read is the tool, apex:bank:accounts:read the API it calls.
+  - name: MCP Accounts
+    handle: mcp-accounts
+    parent: apex
+    description: "Accounts through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read accounts through the assistant" }
+  - name: MCP Transactions
+    handle: mcp-transactions
+    parent: apex
+    description: "Transactions through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read transactions through the assistant" }
+  - name: MCP Payees
+    handle: mcp-payees
+    parent: apex
+    description: "Saved payees through the assistant"
+    actions:
+      - { name: Read, handle: read, description: "Read saved payees through the assistant" }
+  - name: MCP Payments
+    handle: mcp-payments
+    parent: apex
+    description: "Payments through the assistant"
+    actions:
+      - { name: Write, handle: write, description: "Initiate a payment through the assistant" }
+
+  # --- Where a customer reviews and revokes what they have granted -------
+  - { name: Portal, handle: portal, parent: apex, description: "Consent portal" }
+  - name: Consents
+    handle: consents
+    parent: portal
+    actions:
+      - { name: Read, handle: read, description: "View granted consents" }
+      - { name: Revoke, handle: revoke, description: "Revoke a granted consent" }
+# NOTE: the consent portal has no resource server here, deliberately.
+#
+# One was added and then removed. Its BFF sends RFC 8693 `audience` rather than
+# RFC 8707 `resource`, and ThunderID ignores `audience`, so a request carrying
+# resource-server permissions binds to the server-wide defaultResourceServer
+# and every portal: scope is dropped. The portal's scopes are therefore declared
+# as application-owned `scopeClaims` on apex-consent-portal-client instead,
+# which are documented as "not filtered by resource indicators".
+#
+# The consequence is worth stating plainly: application-owned scopes are NOT
+# role-gated. Verified by removing the role grant and signing in again -- the
+# token still carried all four. What bounds a customer is the application's own
+# scope list, which declares only the `:self` and read variants, so no user of
+# this client can obtain `portal:consents:write:any`. Per-user authorization
+# here would need the BFF to send `resource`, which is an upstream change.

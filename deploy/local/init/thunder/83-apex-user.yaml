@@ -1,0 +1,14 @@
+# Apex customer account.
+#
+# Numbered 80+ so the bundle sorts after AMP's own bootstrap (50-73) in the
+# shared ThunderID instance; every id here is apex-prefixed for the same reason.
+resource_type: user
+id: apex-customer
+type: Person
+ouHandle: default
+attributes:
+  username: "alex@apexbank.com"
+  password: "{{.APEX_USER_PASSWORD}}"
+  email: "alex@apexbank.com"
+  given_name: "Alex"
+  family_name: "Morgan"

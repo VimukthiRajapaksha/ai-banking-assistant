@@ -1,0 +1,68 @@
+# Roles are what actually grant permissions. An application listing a scope in
+# its `scopes` array only declares what it MAY request; unless the subject
+# holds a role granting it, the token comes back without it -- and a token with
+# no scope claim looks valid right up until every call 403s.
+resource_type: role
+id: apex-role-customer
+name: Apex Bank Customer
+description: What a customer may do with their own accounts
+ouHandle: default
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:bank:accounts:read"
+      - "apex:bank:accounts:balances:read"
+      - "apex:bank:accounts:transactions:read"
+      - "apex:bank:payees:read"
+      - "apex:bank:payments:write"
+      - "apex:agent:chat:read"
+      - "apex:agent:chat:write"
+      - "apex:portal:consents:read"
+      - "apex:portal:consents:revoke"
+  # The consent portal's own API. A second resource server, because the portal
+  # is not part of any delegated chain -- see 80-apex-resource-servers.yaml.
+  # `:self` only: a customer may review and revoke their OWN consents, and the
+  # `:any` variants exist for an operator role that does not exist yet.
+assignments:
+  - id: apex-customer
+    type: user
+---
+# Held by the CUSTOMER, not by the agent. A delegated exchange is bounded by
+# the subject token's grant alone -- verified: an actor holding no role at all
+# still exchanges a token keeping every one of the subject's scopes. So what
+# lets the assistant act is the customer's own login token carrying apex:mcp-*,
+# which the agent then narrows per tool. Granting this to the agent identity
+# would change nothing.
+resource_type: role
+id: apex-role-agent
+name: Apex Agent
+description: Tools the assistant may invoke on a customer's behalf
+ouHandle: default
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:mcp-accounts:read"
+      - "apex:mcp-transactions:read"
+      - "apex:mcp-payees:read"
+      - "apex:mcp-payments:write"
+assignments:
+  - id: apex-customer
+    type: user
+---
+# The MCP server reaching the bank API with its own identity.
+resource_type: role
+id: apex-role-mcp
+name: Apex MCP Server
+description: Bank API access for the MCP server
+ouHandle: default
+permissions:
+  - resourceServerId: apex-resource-server
+    permissions:
+      - "apex:bank:accounts:read"
+      - "apex:bank:accounts:balances:read"
+      - "apex:bank:accounts:transactions:read"
+      - "apex:bank:payees:read"
+      - "apex:bank:payments:write"
+assignments:
+  - id: apex-mcp-client
+    type: app

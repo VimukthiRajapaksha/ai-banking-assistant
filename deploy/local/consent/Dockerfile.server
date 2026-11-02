@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1
+# OpenFGC consent server.
+#
+# Build context is deploy/local/ so this can pick up both the upstream checkout
+# (external/openfgc/, fetched by scripts/fetch-openfgc.sh at a pinned commit of
+# the unreleased feature/portal branch) and our own entrypoint (consent/).
+FROM golang:1.26 AS build
+
+WORKDIR /src
+COPY external/openfgc/consent-server/go.mod external/openfgc/consent-server/go.sum ./
+RUN go mod download
+
+COPY external/openfgc/consent-server ./
+# modernc.org/sqlite is pure Go, so the binary is fully static.
+RUN CGO_ENABLED=0 go build -o /out/consent-server ./cmd/server
+
+FROM alpine:3.21
+# sqlite CLI is used once, by the entrypoint, to create the schema.
+RUN apk add --no-cache sqlite
+WORKDIR /opt/openfgc
+COPY --from=build /out/consent-server ./consent-server
+COPY external/openfgc/consent-server/dbscripts ./dbscripts
+COPY --chmod=755 consent/entrypoint-server.sh /entrypoint.sh
+# repository/conf/deployment.yaml is a read-only mount (config from git);
+# repository/database is a named volume the entrypoint initialises on first run.
+RUN mkdir -p repository/conf repository/database
+EXPOSE 18040
+ENTRYPOINT ["/entrypoint.sh"]

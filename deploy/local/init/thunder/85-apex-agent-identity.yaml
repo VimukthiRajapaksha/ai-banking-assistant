@@ -1,0 +1,36 @@
+# The agent's own identity -- the principal that appears as `act.sub` when the
+# assistant acts on a customer's behalf.
+#
+# Created here rather than through the Agent Management Platform on purpose.
+# AMP provisions agent identities into the PER-ENVIRONMENT ThunderID
+# (default-idp), while every application, resource server and role here lives
+# in this instance. RFC 8693 requires the subject token and the actor token to
+# share an issuer, so an identity in the other instance could not complete the
+# delegated exchange at all. Creating it alongside everything else keeps the
+# chain intact -- and keeps provisioning to a single credential, which is what
+# lets a fresh machine come up with nothing but `docker compose up`.
+#
+# AMP still observes this agent: telemetry is authorised by the tracing token,
+# which is independent of this identity.
+#
+# includeActClaim is the whole point: without it the exchanged token carries no
+# `act` claim and the agent vanishes from the provenance chain, leaving a token
+# that looks like the customer acting alone.
+resource_type: agent
+id: apex-banking-agent
+ouId: "01900000-0000-7000-8000-000000000001"
+type: default
+name: apex-banking-agent
+inboundAuthConfig:
+  - type: oauth2
+    config:
+      clientId: apex-banking-agent
+      clientSecret: "{{.APEX_AGENT_IDENTITY_SECRET}}"
+      grantTypes: ["client_credentials"]
+      tokenEndpointAuthMethod: "client_secret_basic"
+      includeActClaim: true
+      token:
+        accessToken:
+          clientConfig:
+            validityPeriod: 3600
+            attributes: ["ouId", "ouHandle"]

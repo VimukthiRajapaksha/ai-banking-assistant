@@ -1,0 +1,94 @@
+# Reverse proxy for the Apex Bank demo stack.
+#
+# Upstream names are docker-compose service names, resolved by Docker's embedded
+# DNS on the `apex` network; the ports are each container's INTERNAL listen port.
+#
+# *.localhost resolves to 127.0.0.1 in Chrome/Firefox/Safari without touching
+# /etc/hosts (RFC 6761). CLI tools may not honour it -- use the published host
+# ports (localhost:180x0) or add /etc/hosts entries for curl.
+
+{
+	# Local dev is plain HTTP. Without this Caddy mints internal certs for every
+	# hostname below and redirects to :443.
+	auto_https off
+}
+
+# --- Bank customer UI (React/Vite) + everything it calls, on ONE origin ---
+# Same-origin is what removes CORS from the picture entirely, the same trick the
+# consent portal below uses. Two upstreams are folded in:
+#
+#  - /bank-api/*  the APIM gateway. It answers preflight from the global
+#    `[apim.cors]` block in deployment.toml, which does not allow the
+#    `traceparent`/`baggage` headers this app sends on every request -- and a
+#    per-API CORS config in the Publisher does not override that. It also serves
+#    the self-signed `wso2carbon` cert, which a browser refuses until a human
+#    accepts it in another tab. Proxying here settles both.
+#  - /chat        the agent. Without this the agent needs AGENT_FRONTEND__ORIGIN
+#    to track whatever origin the UI is served from.
+#
+# APIM is a compose service, so it is reached by service name.
+http://portal.apex.localhost {
+	handle_path /bank-api/* {
+		rewrite * /bank/v1.0{uri}
+		reverse_proxy https://apim:8243 {
+			transport http {
+				tls
+				tls_insecure_skip_verify
+			}
+		}
+	}
+
+	handle /chat* {
+		reverse_proxy agent:18020
+	}
+
+	# Passkey enrolment, relayed by the agent because the flow secret it needs
+	# must not be shipped to the browser. Same origin as the portal, so the
+	# page calls it with no CORS involved.
+	handle /security/* {
+		reverse_proxy agent:18020
+	}
+
+	handle {
+		reverse_proxy ui:18000
+	}
+}
+
+# --- AI banking agent (/chat) ---
+http://agent.apex.localhost {
+	reverse_proxy agent:18020
+}
+
+# --- MCP server ---
+http://mcp.apex.localhost {
+	reverse_proxy mcp-server:18010
+}
+
+# --- Mock bank backend (resource APIs) ---
+http://bank.apex.localhost {
+	reverse_proxy mock-backend:18030
+}
+
+# --- OpenFGC consent server (raw consent API) ---
+http://consent.apex.localhost {
+	reverse_proxy consent-server:18040
+}
+
+# --- Consent portal: SPA + its BFF on ONE origin ---
+# The BFF's auth is split-token cookies (portal-at-p1, portal-id-p2, ...).
+# Same-origin keeps those cookies working with no Domain attribute, no CORS
+# preflight, and no SameSite trouble on the /auth/callback redirect.
+http://portal.consent.apex.localhost {
+	handle /api/* {
+		reverse_proxy consent-bff:18050
+	}
+	handle /auth/* {
+		reverse_proxy consent-bff:18050
+	}
+	handle /me* {
+		reverse_proxy consent-bff:18050
+	}
+	handle {
+		reverse_proxy consent-portal:18060
+	}
+}

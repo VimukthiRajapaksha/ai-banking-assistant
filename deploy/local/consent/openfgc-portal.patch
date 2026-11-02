@@ -1,0 +1,440 @@
+diff --git a/portal/frontend/src/__tests__/ConsentPaymentDetailsCard.test.tsx b/portal/frontend/src/__tests__/ConsentPaymentDetailsCard.test.tsx
+new file mode 100644
+index 0000000..4b135f2
+--- /dev/null
++++ b/portal/frontend/src/__tests__/ConsentPaymentDetailsCard.test.tsx
+@@ -0,0 +1,95 @@
++/*
++ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
++ *
++ * WSO2 LLC. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++import { cleanup, render, screen } from '@testing-library/react'
++import { I18nextProvider } from 'react-i18next'
++import { afterEach, describe, expect, it } from 'vitest'
++import { OxygenTheme, OxygenUIThemeProvider } from '@wso2/oxygen-ui'
++import i18n from '../i18n/i18n'
++import ConsentPaymentDetailsCard from '../features/consent-registry/components/details/ConsentPaymentDetailsCard'
++import type { ConsentDetailAPI } from '../types/consent'
++
++function renderCard(detail: ConsentDetailAPI): void {
++  render(
++    <I18nextProvider i18n={i18n}>
++      <OxygenUIThemeProvider theme={OxygenTheme}>
++        <ConsentPaymentDetailsCard detail={detail} />
++      </OxygenUIThemeProvider>
++    </I18nextProvider>,
++  )
++}
++
++const PAYMENT: ConsentDetailAPI = {
++  id: 'consent-pay',
++  groupId: 'apex-banking',
++  type: 'payment',
++  status: 'ACTIVE',
++  createdTime: 1,
++  updatedTime: 1,
++  purposes: [],
++  attributes: {
++    payee: 'Dana Lee',
++    payeeAccountNumber: '40218834417',
++    payeeBank: 'Meridian Trust',
++    amount: '50.00',
++    currency: 'USD',
++    reference: 'Dinner last night',
++  },
++  authorizations: [
++    {
++      id: 'auth-1',
++      type: 'authorisation',
++      status: 'APPROVED',
++      updatedTime: 1,
++      resources: {
++        accountIds: ['acc-chk-1120'],
++        accounts: [{ id: 'acc-chk-1120', name: 'Everyday Checking', accountNumber: '50318021120' }],
++      },
++    },
++  ],
++}
++
++afterEach(() => {
++  cleanup()
++})
++
++describe('ConsentPaymentDetailsCard', () => {
++  it('shows where a payment comes from, where it goes, how much and why', () => {
++    renderCard(PAYMENT)
++
++    expect(screen.getByText('Payment Details')).toBeInTheDocument()
++    expect(screen.getByText('Everyday Checking')).toBeInTheDocument()
++    expect(screen.getByText('50318021120')).toBeInTheDocument()
++    expect(screen.getByText('Dana Lee · Meridian Trust')).toBeInTheDocument()
++    expect(screen.getByText('40218834417')).toBeInTheDocument()
++    expect(screen.getByText('50.00 USD')).toBeInTheDocument()
++    expect(screen.getByText('Dinner last night')).toBeInTheDocument()
++  })
++
++  it('says the funding account is not chosen until the payment is approved', () => {
++    renderCard({ ...PAYMENT, status: 'CREATED', authorizations: [] })
++
++    expect(screen.getByText('Not yet chosen')).toBeInTheDocument()
++  })
++
++  it('renders nothing for consents that are not payments', () => {
++    renderCard({ ...PAYMENT, type: 'account-information' })
++
++    expect(screen.queryByText('Payment Details')).not.toBeInTheDocument()
++  })
++})
+diff --git a/portal/frontend/src/__tests__/UserLabel.test.ts b/portal/frontend/src/__tests__/UserLabel.test.ts
+new file mode 100644
+index 0000000..0aba88d
+--- /dev/null
++++ b/portal/frontend/src/__tests__/UserLabel.test.ts
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
++ *
++ * WSO2 LLC. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++import { describe, expect, it } from 'vitest'
++import { getUserLabel } from '../utils/userLabel'
++
++describe('getUserLabel', () => {
++  it("shows the signed-in user's email for their own id", () => {
++    expect(
++      getUserLabel('apex-customer', { sub: 'apex-customer', email: 'alex@apexbank.com' }),
++    ).toBe('alex@apexbank.com')
++  })
++
++  it('falls back to the username when there is no email', () => {
++    expect(getUserLabel('apex-customer', { sub: 'apex-customer', username: 'alex' })).toBe('alex')
++  })
++
++  it("shows someone else's id as recorded", () => {
++    expect(getUserLabel('other-user', { sub: 'apex-customer', email: 'alex@apexbank.com' })).toBe(
++      'other-user',
++    )
++  })
++
++  it('shows the id when no one is signed in, and a dash when there is no id', () => {
++    expect(getUserLabel('apex-customer', undefined)).toBe('apex-customer')
++    expect(getUserLabel(undefined, undefined)).toBe('-')
++  })
++})
+diff --git a/portal/frontend/src/features/consent-registry/ConsentDetailsPage.tsx b/portal/frontend/src/features/consent-registry/ConsentDetailsPage.tsx
+index 38d50e2..6cba62f 100644
+--- a/portal/frontend/src/features/consent-registry/ConsentDetailsPage.tsx
++++ b/portal/frontend/src/features/consent-registry/ConsentDetailsPage.tsx
+@@ -39,6 +39,7 @@ import ConsentRevocationDialog from './components/ConsentRevocationDialog'
+ import ConsentAuthorizationsSection from './components/details/ConsentAuthorizationsSection'
+ import ConsentLifecycleSection from './components/details/ConsentLifecycleSection'
+ import ConsentMetadataCard from './components/details/ConsentMetadataCard'
++import ConsentPaymentDetailsCard from './components/details/ConsentPaymentDetailsCard'
+ import ConsentPurposesSection from './components/details/ConsentPurposesSection'
+ import ConsentResourcesModal from './components/details/ConsentResourcesModal'
+ import {
+@@ -290,6 +291,7 @@ function ConsentDetailsPage({ variant = 'self' }: ConsentDetailsPageProps): Reac
+       </Stack>
+ 
+       <ConsentMetadataCard consentId={id} detail={detail} />
++      <ConsentPaymentDetailsCard detail={detail} />
+       <ConsentPurposesSection purposes={detail.purposes} />
+       <ConsentAuthorizationsSection
+         authorizations={detail.authorizations ?? []}
+diff --git a/portal/frontend/src/features/consent-registry/components/details/ConsentAuthorizationsSection.tsx b/portal/frontend/src/features/consent-registry/components/details/ConsentAuthorizationsSection.tsx
+index 681912e..88f1771 100644
+--- a/portal/frontend/src/features/consent-registry/components/details/ConsentAuthorizationsSection.tsx
++++ b/portal/frontend/src/features/consent-registry/components/details/ConsentAuthorizationsSection.tsx
+@@ -37,6 +37,7 @@ import { Eye } from '@wso2/oxygen-ui-icons-react'
+ import { useTranslation } from 'react-i18next'
+ import type { ConsentAuthorizationResource } from '../../../../types/consent'
+ import { formatEpochTimestamp } from '../../../../utils/dateTime'
++import { getUserLabel } from '../../../../utils/userLabel'
+ import { getConsentStatusChipColor, getConsentStatusLabelKey } from '../../utils/statusChip'
+ 
+ interface ConsentAuthorizationsSectionProps {
+@@ -102,15 +103,16 @@ function ConsentAuthorizationsSection({
+           <TableBody>
+             {authorizations.map((authorization) => {
+               const resourcesEmpty = isEmptyAuthorizationResources(authorization.resources)
++              const userLabel = getUserLabel(authorization.userId)
+ 
+               return (
+                 <TableRow key={authorization.id}>
+                   <TableCell>
+                     <Stack direction="row" spacing={1} alignItems="center">
+                       <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+-                        {(authorization.userId ?? 'U').charAt(0).toUpperCase()}
++                        {(authorization.userId ? userLabel : 'U').charAt(0).toUpperCase()}
+                       </Avatar>
+-                      <Typography variant="body2">{authorization.userId ?? '-'}</Typography>
++                      <Typography variant="body2">{userLabel}</Typography>
+                     </Stack>
+                   </TableCell>
+                   <TableCell>
+diff --git a/portal/frontend/src/features/consent-registry/components/details/ConsentPaymentDetailsCard.tsx b/portal/frontend/src/features/consent-registry/components/details/ConsentPaymentDetailsCard.tsx
+new file mode 100644
+index 0000000..babe8ce
+--- /dev/null
++++ b/portal/frontend/src/features/consent-registry/components/details/ConsentPaymentDetailsCard.tsx
+@@ -0,0 +1,162 @@
++/*
++ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
++ *
++ * WSO2 LLC. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++import { Box, Card, CardContent, CardHeader, Divider, Typography } from '@wso2/oxygen-ui'
++import { ArrowDownToLine, ArrowUpFromLine, Banknote, FileText } from '@wso2/oxygen-ui-icons-react'
++import { useTranslation } from 'react-i18next'
++import type { ConsentAuthorizationResource, ConsentDetailAPI } from '../../../../types/consent'
++
++interface ConsentPaymentDetailsCardProps {
++  detail: ConsentDetailAPI
++}
++
++interface PaymentAccount {
++  name: string
++  accountNumber: string
++}
++
++interface DetailRowProps {
++  icon: React.ReactNode
++  label: string
++  primary: string
++  secondary?: string
++}
++
++/** The account the payment is drawn from, as recorded with the approval. */
++function getDebtorAccount(
++  authorizations: ConsentAuthorizationResource[] | undefined,
++): PaymentAccount | null {
++  const recorded = (authorizations ?? [])
++    .map(({ resources }) =>
++      resources != null && typeof resources === 'object'
++        ? (resources as { accounts?: unknown }).accounts
++        : undefined,
++    )
++    .find(
++      (accounts): accounts is Partial<PaymentAccount>[] =>
++        Array.isArray(accounts) && accounts.length > 0,
++    )
++  if (!recorded) {
++    return null
++  }
++  const [account] = recorded
++  return { name: account.name ?? '', accountNumber: account.accountNumber ?? '' }
++}
++
++function joinParts(parts: (string | undefined)[]): string {
++  return parts.filter((part) => part != null && part.trim().length > 0).join(' · ')
++}
++
++function DetailRow({ icon, label, primary, secondary }: DetailRowProps): React.JSX.Element {
++  return (
++    <Box>
++      <Typography
++        variant="caption"
++        color="text.secondary"
++        fontWeight={700}
++        sx={{
++          display: 'inline-flex',
++          alignItems: 'center',
++          gap: 0.5,
++          mb: 1,
++          textTransform: 'uppercase',
++          letterSpacing: 0.5,
++        }}
++      >
++        {icon}
++        {label}
++      </Typography>
++      <Typography variant="body2" fontWeight={500}>
++        {primary}
++      </Typography>
++      {secondary ? (
++        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
++          {secondary}
++        </Typography>
++      ) : null}
++    </Box>
++  )
++}
++
++/**
++ * What a payment consent actually authorises: from where, to whom, how much
++ * and what for. Rendered only for payment consents that carry these details.
++ */
++function ConsentPaymentDetailsCard({
++  detail,
++}: ConsentPaymentDetailsCardProps): React.JSX.Element | null {
++  const { t } = useTranslation('common')
++  const attributes = detail.attributes ?? {}
++  if (detail.type !== 'payment' || !attributes.payee) {
++    return null
++  }
++  const debtor = getDebtorAccount(detail.authorizations)
++  const notRecorded = t('consentRegistry.details.payment.notRecorded', 'Not yet chosen')
++
++  return (
++    <Card sx={{ boxShadow: 1 }}>
++      <CardHeader
++        title={
++          <Typography variant="h6">
++            {t('consentRegistry.details.payment.title', 'Payment Details')}
++          </Typography>
++        }
++        sx={{ pb: 1 }}
++      />
++      <Divider />
++      <CardContent sx={{ pt: 3 }}>
++        <Box
++          sx={{
++            display: 'grid',
++            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
++            gap: { xs: 3, md: 4 },
++          }}
++        >
++          <DetailRow
++            icon={<ArrowUpFromLine size={14} />}
++            label={t('consentRegistry.details.payment.from', 'Pay From')}
++            primary={debtor?.name || notRecorded}
++            secondary={debtor?.accountNumber}
++          />
++          <DetailRow
++            icon={<ArrowDownToLine size={14} />}
++            label={t('consentRegistry.details.payment.to', 'Pay To')}
++            primary={joinParts([attributes.payee, attributes.payeeBank])}
++            secondary={attributes.payeeAccountNumber}
++          />
++          <DetailRow
++            icon={<Banknote size={14} />}
++            label={t('consentRegistry.details.payment.amount', 'Amount')}
++            primary={[attributes.amount, attributes.currency].filter(Boolean).join(' ')}
++          />
++          <DetailRow
++            icon={<FileText size={14} />}
++            label={t('consentRegistry.details.payment.description', 'Description')}
++            primary={attributes.reference || '-'}
++          />
++        </Box>
++      </CardContent>
++    </Card>
++  )
++}
++
++DetailRow.defaultProps = {
++  secondary: undefined,
++}
++
++export default ConsentPaymentDetailsCard
+diff --git a/portal/frontend/src/i18n/resources/en/common.ts b/portal/frontend/src/i18n/resources/en/common.ts
+index 14de0aa..4009192 100644
+--- a/portal/frontend/src/i18n/resources/en/common.ts
++++ b/portal/frontend/src/i18n/resources/en/common.ts
+@@ -118,6 +118,14 @@ const commonEn = {
+       validUntil: 'Valid Until',
+       groupId: 'Group ID',
+       recurring: 'Recurring',
++      payment: {
++        title: 'Payment Details',
++        from: 'Pay From',
++        to: 'Pay To',
++        amount: 'Amount',
++        description: 'Description',
++        notRecorded: 'Not yet chosen',
++      },
+       back: 'Back to Registry',
+       notFound: 'Consent record not found',
+       approved: 'Approved',
+diff --git a/portal/frontend/src/utils/userLabel.ts b/portal/frontend/src/utils/userLabel.ts
+new file mode 100644
+index 0000000..e70f7d9
+--- /dev/null
++++ b/portal/frontend/src/utils/userLabel.ts
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
++ *
++ * WSO2 LLC. licenses this file to you under the Apache License,
++ * Version 2.0 (the "License"); you may not use this file except
++ * in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++import { getUserProfile, type UserProfile } from './authClient'
++
++const LABEL_CLAIMS = ['email', 'preferred_username', 'username'] as const
++
++/**
++ * How a user id reads on screen.
++ *
++ * A consent records the user by their identity-provider id (the token `sub`),
++ * which means nothing to the person looking at it. When that id is the
++ * signed-in user's own, show their email or username from the ID token
++ * instead. Anyone else's id is shown as recorded: the portal has no claims
++ * for them.
++ */
++export function getUserLabel(
++  userId: string | undefined,
++  profile: UserProfile | undefined = getUserProfile(),
++): string {
++  if (!userId) {
++    return '-'
++  }
++  if (!profile || profile.sub !== userId) {
++    return userId
++  }
++  const label = LABEL_CLAIMS.map((name) => profile[name]).find(
++    (value): value is string => typeof value === 'string' && value.trim().length > 0,
++  )
++  return label ? label.trim() : userId
++}

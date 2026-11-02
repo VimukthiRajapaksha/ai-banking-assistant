@@ -22,3 +22,9 @@ dist/
 .idea/
 .vscode/
 .DS_Store
+
+# Local stack: inputs, provisioner output, and the fetched OpenFGC checkout
+deploy/local/.env
+deploy/local/.env.generated
+deploy/local/.env.generated.*
+deploy/local/external/

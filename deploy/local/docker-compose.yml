@@ -1,0 +1,371 @@
+# Apex Bank -- local stack.
+#
+#   scripts/start.sh      (or: docker compose -f deploy/local/docker-compose.yml up -d --build)
+#
+# Needs WSO2 Agent Manager running on the host first: it provides ThunderID
+# (thunder.amp.localhost:8080), the LLM gateway and tracing. See README.md in
+# this folder.
+#
+# Paths below are relative to this file. Inputs live in ./.env (copied from
+# .env.example); everything the provisioners mint is written to
+# ./.env.generated. The per-service files in ./env/ are created by
+# scripts/start.sh from the committed ./env/*.env.example. Only the examples
+# are committed; every .env is gitignored.
+
+name: apex-bank
+
+x-service-defaults: &defaults
+  restart: unless-stopped
+  networks: [apex]
+
+services:
+  # --- One-shot init (airflow-init / createbuckets pattern) -----------------
+  # Each runs to completion and exits 0; the services that need its output gate
+  # on service_completed_successfully. Every one is idempotent: a re-run adopts
+  # what already exists and never rotates a recorded secret.
+
+  # ThunderID (AMP's built-in instance): resource server, flows, applications,
+  # roles, the customer and the agent identity.
+  thunder-init:
+    build:
+      context: ./init
+    command: ["/init/thunder-init.sh"]
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      OUT_FILE: /out/.env.generated
+    volumes:
+      - ./:/out
+    networks: [apex]
+    restart: "no"
+    extra_hosts:
+      - "thunder.amp.localhost:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  # Agent Management Platform: project, the Anthropic LLM provider behind the
+  # gateway, the agent registration, and the tracing token. Runs after
+  # thunder-init so both halves land in the same .env.generated.
+  amp-init:
+    build:
+      context: ./init
+    command: ["/init/amp-init.sh"]
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      OUT_FILE: /out/.env.generated
+      # NPI masking guardrail on the agent's AMP LLM proxy: enforce | monitor | off.
+      # Attached only when the AMP gateway runs the custom image built from
+      # gateway-policies/ (see gateway-policies/README.md); skipped otherwise.
+      AMP_NPI_GUARDRAIL: ${AMP_NPI_GUARDRAIL:-enforce}
+      # Agent token budget on the LLM proxy: "<count>/<duration>[,...]" | off.
+      AMP_TOKEN_LIMITS: ${AMP_TOKEN_LIMITS:-60000/1m,1000000/1h}
+      # Continuous AMP evaluation monitor (rule-based evaluators): on | off.
+      AMP_QUALITY_MONITOR: ${AMP_QUALITY_MONITOR:-on}
+      AMP_MONITOR_INTERVAL_MINUTES: ${AMP_MONITOR_INTERVAL_MINUTES:-60}
+    volumes:
+      - ./:/out
+    networks: [apex]
+    restart: "no"
+    extra_hosts:
+      - "thunder.amp.localhost:host-gateway"
+      - "default-default.gateway.localhost:host-gateway"
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      thunder-init:
+        condition: service_completed_successfully
+
+  # OpenFGC: the consent elements and purposes. Purpose ids are minted by the
+  # server, so they are read back into .env.generated for the MCP server.
+  consent-init:
+    build:
+      context: ./init
+    command: ["/init/consent-init.sh"]
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./:/out
+    networks: [apex]
+    restart: "no"
+    depends_on:
+      consent-server:
+        condition: service_healthy
+
+  # WSO2 API Manager: publishes the bank API with the scopes ThunderID issues,
+  # registers ThunderID as key manager, and deploys a revision to the gateway.
+  # Gated on apim being healthy -- APIM takes minutes to boot and every call
+  # before that is a connection refused.
+  apim-init:
+    build:
+      context: ./init
+    command: ["/init/apim-init.sh"]
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      OUT_FILE: /out/.env.generated
+      APIM_BASE_URL: https://apim:9443
+      APIM_BACKEND_URL: http://mock-backend:18030
+      APIM_GATEWAY_URL: https://apim:8243
+    volumes:
+      - ./:/out
+    networks: [apex]
+    restart: "no"
+    depends_on:
+      apim:
+        condition: service_healthy
+      thunder-init:
+        condition: service_completed_successfully
+
+  # --- Reverse proxy -------------------------------------------------------
+  # Gives every service a stable *.apex.localhost name, and puts the portal,
+  # its bank API and the agent on one origin so the browser needs no CORS.
+  caddy:
+    <<: *defaults
+    image: caddy:2.10-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ui
+      - agent
+      - mcp-server
+      - mock-backend
+      - consent-server
+      - consent-bff
+      - consent-portal
+
+  # --- WSO2 API Manager -----------------------------------------------------
+  # Fronts the bank API: validates the bearer token and checks the scope on
+  # each resource before the request reaches the backend.
+  #
+  # Config is mounted rather than baked so the CORS allow-list and the
+  # key-manager settings are reviewable in git. The H2 database is a named
+  # volume: without it every restart loses the published API.
+  apim:
+    <<: *defaults
+    image: wso2/wso2am:4.7.0
+    hostname: apim
+    volumes:
+      - ./apim/deployment.toml:/home/wso2carbon/wso2am-4.7.0/repository/conf/deployment.toml:ro
+      # Mounted at the image's own database directory, not a new path: a named
+      # volume inherits ownership from the directory that already exists in the
+      # image, and anywhere else is created root-owned, which WSO2 (running as
+      # wso2carbon) cannot write -- H2 then fails with AccessDeniedException.
+      - apim_db:/home/wso2carbon/wso2am-4.7.0/repository/database
+    ports:
+      - "8243:8243"   # https gateway
+      - "8280:8280"   # http gateway
+      - "9443:9443"   # publisher / devportal / admin
+    extra_hosts:
+      - "thunder.amp.localhost:host-gateway"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sk -o /dev/null https://localhost:9443/services/Version"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 90s
+
+  # --- Bank customer portal ------------------------------------------------
+  ui:
+    <<: *defaults
+    build:
+      context: ../../apps/portal
+    # Vite's file watcher opens a descriptor per watched file; the default
+    # container limit is too low and it dies with EMFILE on startup.
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    environment:
+      VITE_USE_POLLING: "1"
+    ports:
+      - "18000:18000"
+    volumes:
+      # Vite reads VITE_* from .env at dev-server start; mounting keeps the
+      # values out of the image.
+      - ./env/portal.env:/app/.env:ro
+      - ../../apps/portal/src:/app/src
+    depends_on:
+      - agent
+
+  # --- AI banking agent ----------------------------------------------------
+  agent:
+    <<: *defaults
+    build:
+      context: ../../agents/banking-assistant
+    env_file:
+      - path: ./env/agent.env
+        required: true
+      # Written by the init services; listed second so generated values win.
+      - path: .env.generated
+        required: false
+    extra_hosts:
+      # ThunderID and the AMP gateway run in AMP's k3d cluster, not this
+      # network. *.localhost resolves to the container's own loopback without these.
+      - "thunder.amp.localhost:host-gateway"
+      - "default-default.gateway.localhost:host-gateway"
+    environment:
+      AGENT_HOST: 0.0.0.0
+      AGENT_MCP__SERVER_URL: http://mcp-server:18010
+      # Head sampling, read by the OTel SDK itself. Both services must agree:
+      # parent-based means the MCP server follows the agent's decision.
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
+    ports:
+      - "18020:18020"
+    depends_on:
+      mcp-server:
+        condition: service_started
+      amp-init:
+        condition: service_completed_successfully
+
+  # --- MCP server ----------------------------------------------------------
+  mcp-server:
+    <<: *defaults
+    build:
+      context: ../../mcp-servers/banking
+    env_file:
+      - path: ./env/mcp-server.env
+        required: true
+      # Purpose ids, OAuth client credentials and the gateway URL minted by
+      # the init services.
+      - path: .env.generated
+        required: false
+    extra_hosts:
+      - "thunder.amp.localhost:host-gateway"
+      - "default-default.gateway.localhost:host-gateway"
+    environment:
+      MCP_HOST: 0.0.0.0
+      # The agent dials the compose service name, and Caddy forwards the
+      # original Host for mcp.apex.localhost; the SDK rejects any Host it was
+      # not told about with 421 before the request reaches a tool.
+      MCP_ALLOWED_HOSTS: '["mcp-server:*","mcp.apex.localhost","localhost:*","127.0.0.1:*"]'
+      # The bank API base URL comes from .env.generated (apim-init writes the
+      # gateway URL). Not pinned here, or tool calls would go straight to the
+      # backend, past the only component that enforces the token's scope.
+      #
+      # The local gateway's certificate is self-signed, so verification is off
+      # for this stack only.
+      MCP_OUTBOUND_API__VERIFY_TLS: "false"
+      MCP_CONSENT__BASE_URL: http://consent-server:18040/api/v1
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
+    ports:
+      - "18010:18010"
+    depends_on:
+      mock-backend:
+        condition: service_healthy
+      consent-init:
+        condition: service_completed_successfully
+      apim-init:
+        condition: service_completed_successfully
+      amp-init:
+        condition: service_completed_successfully
+
+  # --- Mock bank backend ---------------------------------------------------
+  mock-backend:
+    <<: *defaults
+    build:
+      context: ../../backends/mock-bank
+    env_file:
+      - ./env/mock-bank.env
+    environment:
+      HOST: 0.0.0.0
+    ports:
+      - "18030:18030"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:18030/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # --- OpenFGC consent server ----------------------------------------------
+  # Built from the checkout scripts/fetch-openfgc.sh puts in ./external/.
+  consent-server:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: consent/Dockerfile.server
+    volumes:
+      - ./consent/deployment.yaml:/opt/openfgc/repository/conf/deployment.yaml:ro
+      - consent_data:/opt/openfgc/repository/database
+    ports:
+      - "18040:18040"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:18040/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  # --- Consent portal BFF (OpenFGC) ----------------------------------------
+  consent-bff:
+    <<: *defaults
+    build:
+      context: ./external/openfgc/portal/backend
+    env_file:
+      - path: ./env/consent-bff.env
+        required: true
+      # The ThunderID client thunder-init created for this portal.
+      - path: .env.generated
+        required: false
+    extra_hosts:
+      # Without this, OIDC discovery resolves to the container's own loopback
+      # and the BFF fails to start.
+      - "thunder.amp.localhost:host-gateway"
+    environment:
+      BFF_SERVER__HOST: 0.0.0.0
+      BFF_PROXY__OPENFGC_API_URL: http://consent-server:18040
+      BFF_CORS__ALLOWED_ORIGINS: http://localhost:18000,http://localhost:18060,http://portal.apex.localhost,http://portal.consent.apex.localhost
+    ports:
+      - "18050:18050"
+    depends_on:
+      consent-server:
+        condition: service_healthy
+      thunder-init:
+        condition: service_completed_successfully
+
+  # --- Consent portal SPA (OpenFGC) ----------------------------------------
+  consent-portal:
+    <<: *defaults
+    build:
+      context: ./external/openfgc/portal/frontend
+      dockerfile: ../../../../consent/Dockerfile.portal
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ./env/consent-portal.env:/app/.env:ro
+      - ./consent/vite.docker.config.ts:/app/vite.docker.config.ts:ro
+      - ./external/openfgc/portal/frontend/src:/app/src
+      # Apex look without touching the upstream source: the theme rides in
+      # through vite.docker.config.ts, the logo and favicons are mounted over
+      # the portal's own files.
+      - ./consent/apex-theme:/app/apex-theme:ro
+      - ../../apps/portal/public/apex-logo.png:/app/public/wso2-logo.png:ro
+      - ../../apps/portal/public/apex-logo.png:/app/public/favicon/favicon-16x16.png:ro
+      - ../../apps/portal/public/apex-logo.png:/app/public/favicon/favicon-32x32.png:ro
+      - ../../apps/portal/public/apex-logo.png:/app/public/favicon/favicon.ico:ro
+      - ../../apps/portal/public/apex-logo.png:/app/public/favicon/apple-touch-icon.png:ro
+    ports:
+      - "18060:18060"
+    depends_on:
+      - consent-bff
+
+networks:
+  apex:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  consent_data:
+  apim_db:

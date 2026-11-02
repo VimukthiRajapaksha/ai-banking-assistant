@@ -1,0 +1,90 @@
+# Apex branding for ThunderID's hosted sign-in page (the Gate).
+#
+# A theme (colours, type, radius) and a layout (page structure plus inline
+# CSS), which the portal and consent-portal applications point at through
+# themeId / layoutId in 82-apex-applications.yaml. The same mechanism the AMP
+# console uses for its own sign-in page; nothing here touches that one.
+#
+# The values mirror the portals' "Apex Acrylic Blue" theme
+# (apps/portal/src/theme.ts), so signing in looks like the product the
+# customer is signing in to.
+#
+# Numbered 79 so it imports before the applications that reference it.
+#
+# The logo is a data: URI, not a URL on the portal. ThunderID's CSP is
+# server-wide and owned by the AMP install; its img-src admits 'self', data:
+# and a few WSO2/Google hosts, so http://portal.apex.localhost/... is blocked
+# and rendered as a broken image. Inlining it needs no change to that policy.
+resource_type: theme
+id: apex-theme
+handle: apex
+displayName: Apex Bank
+theme:
+  direction: ltr
+  defaultColorScheme: light
+  shape:
+    borderRadius: 12
+  typography:
+    fontFamily: "Inter Variable, Inter, sans-serif"
+    h1:
+      fontSize: "1.5rem"
+      fontWeight: 600
+      lineHeight: 1.3
+  colorSchemes:
+    light:
+      colors:
+        primary: { main: "#0050cb", dark: "#003fa4", contrastText: "#ffffff" }
+        secondary: { main: "#e5eaf5", dark: "#cfd6e6", contrastText: "#0b1c30" }
+        background: { default: "#f3f4f6", paper: "#ffffff" }
+        text: { primary: "#0b1c30", secondary: "#424656" }
+    dark:
+      colors:
+        primary: { main: "#4d8dff", dark: "#2f6fe8", contrastText: "#ffffff" }
+        secondary: { main: "#1e2738", dark: "#151c2a", contrastText: "#e6ecf7" }
+        background: { default: "#07090d", paper: "#11151d" }
+        text: { primary: "#e6ecf7", secondary: "#b3bdd1" }
+---
+resource_type: layout
+id: "ba37e552-00e8-5c59-8b67-5c00a29d191c"
+handle: apex
+displayName: Apex Bank
+layout:
+  head:
+    stylesheets:
+      - id: apex-signin
+        type: inline
+        content: |
+          /*
+           * The Gate renders only the sign-in card once a layout is attached (the
+           * ThunderID marketing panel goes away), so the left panel is drawn here as
+           * body::before / body::after. Text only, no image: ThunderID's CSS sanitiser
+           * rewrites url(data:...) to url(about:...), and any http(s) image would need
+           * the server-wide CSP changed. The logo is the card's own <img> (logoUrl).
+           * Selectors are ThunderID's MUI class names, so they can shift with a ThunderID
+           * upgrade -- the same trade the AMP console's layout makes.
+           */
+          :root { --apex-blue: #0050cb; --apex-glow: rgba(30,111,255,0.16); --apex-slate: rgba(71,85,105,0.14); --apex-page: #f3f4f6; --apex-panel: #e9edf5; --apex-ink: #0b1c30; --apex-muted: #424656; --apex-card: #ffffff; --apex-line: rgba(11,28,48,0.08); }
+          [data-color-scheme="dark"] { --apex-blue: #4d8dff; --apex-glow: rgba(30,111,255,0.26); --apex-slate: rgba(100,116,139,0.24); --apex-page: #07090d; --apex-panel: #0b1120; --apex-ink: #e6ecf7; --apex-muted: #b3bdd1; --apex-card: #11151d; --apex-line: rgba(255,255,255,0.08); }
+          body { margin: 0 !important; min-height: 100vh !important; background-color: var(--apex-page) !important; background-image: radial-gradient(circle at 65% 30%, var(--apex-glow) 10%, transparent 40%), radial-gradient(circle at 15% 70%, var(--apex-slate) 1%, transparent 45%) !important; background-attachment: fixed !important; display: grid !important; grid-template-columns: 1fr !important; }
+          body::before, body::after { display: none; }
+          @media (min-width: 900px) {
+            body { grid-template-columns: minmax(380px, 1fr) minmax(460px, 1fr) !important; }
+            body::before { content: "ApexBank"; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 40px; box-sizing: border-box; font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; color: var(--apex-ink); background-color: var(--apex-panel); background-image: radial-gradient(700px 420px at 0% 0%, var(--apex-glow), transparent 60%), radial-gradient(600px 400px at 100% 100%, var(--apex-slate), transparent 60%); background-repeat: no-repeat; border-right: 1px solid var(--apex-line); }
+            body::after { content: "Your money, just a question away."; display: block; position: fixed; left: 0; width: 50%; top: calc(50% + 12px); padding: 0 48px; box-sizing: border-box; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--apex-muted); pointer-events: none; }
+          }
+          .MuiPaper-root { max-width: 420px !important; width: 100% !important; margin: auto !important; padding: 40px 36px !important; border-radius: 12px !important; background-color: var(--apex-card) !important; border: 1px solid var(--apex-line) !important; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 40px rgba(15,23,42,0.08) !important; }
+          [data-color-scheme="dark"] .MuiPaper-root { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 16px 48px rgba(0,0,0,0.5) !important; }
+          .MuiPaper-root img { display: block !important; max-height: 48px !important; width: auto !important; margin: 0 auto 20px !important; }
+          [data-color-scheme="dark"] .MuiPaper-root img { filter: brightness(2.2) !important; }
+          .MuiPaper-root h1, .MuiPaper-root .MuiTypography-h1 { text-align: center !important; font-size: 1.5rem !important; font-weight: 600 !important; letter-spacing: -0.01em !important; color: var(--apex-ink) !important; margin: 0 0 8px !important; }
+          .MuiPaper-root .MuiOutlinedInput-root { border-radius: 8px !important; }
+          .MuiPaper-root .MuiButton-root { border-radius: 20px !important; text-transform: none !important; font-weight: 500 !important; height: 44px !important; box-shadow: none !important; }
+          .MuiPaper-root .MuiButton-containedPrimary:not(:disabled) { background: linear-gradient(90deg, #1a66e0 0%, #0040a8 100%) !important; color: #fff !important; }
+          .MuiPaper-root .MuiButton-containedPrimary:not(:disabled):hover { opacity: 0.92 !important; }
+          .MuiPaper-root a { color: var(--apex-blue) !important; }
+  screens:
+    signin:
+      title: "Sign in to ApexBank"
+      layout: split
+    common:
+      layout: split
