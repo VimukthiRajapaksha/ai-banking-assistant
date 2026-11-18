@@ -112,8 +112,12 @@ def _bearer_token(request: Request) -> str:
     Not verified here -- the gateway in front of this service has already done
     that -- but its absence is a client error worth failing loudly on rather
     than discovering as a confusing exchange failure.
+
+    Behind AMP's JWT security the gateway removes `Authorization` and forwards
+    the validated token as `x-forwarded-authorization` instead, so that header
+    is read first.
     """
-    header = request.headers.get("authorization", "")
+    header = request.headers.get("x-forwarded-authorization") or request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
     if scheme.lower() != "bearer" or not token:
         raise HTTPException(status_code=401, detail="Missing bearer token")
