@@ -49,18 +49,18 @@ RESTRICTED_PERMISSIONS: frozenset[str] = frozenset(
 CATALOG: dict[str, ToolRequirement] = {
     VIEW_CARD_PROMOTIONS: ToolRequirement(mcp_scope="", bank_scope="", permissions=frozenset()),
     GET_ACCOUNTS: ToolRequirement(
-        mcp_scope="apex:mcp-accounts:read",
+        mcp_scope="apex:mcp:accounts:read",
         bank_scope="apex:bank:accounts:read apex:bank:accounts:balances:read",
         permissions=frozenset({"ReadAccountsDetail", "ReadBalances"}),
     ),
     GET_TRANSACTIONS: ToolRequirement(
-        mcp_scope="apex:mcp-transactions:read",
+        mcp_scope="apex:mcp:transactions:read",
         bank_scope="apex:bank:accounts:read apex:bank:accounts:transactions:read",
         # Transitive: resolving an account id costs the account permissions too.
         permissions=frozenset({"ReadTransactionsDetail", "ReadAccountsDetail", "ReadBalances"}),
     ),
     GET_PAYEES: ToolRequirement(
-        mcp_scope="apex:mcp-payees:read",
+        mcp_scope="apex:mcp:payees:read",
         bank_scope="apex:bank:payees:read",
         # No consent: a payee list is who the customer has chosen to pay
         # before. It exposes no balance and no history, and needing approval
@@ -69,7 +69,7 @@ CATALOG: dict[str, ToolRequirement] = {
         permissions=frozenset(),
     ),
     MAKE_PAYMENT: ToolRequirement(
-        mcp_scope="apex:mcp-payments:write",
+        mcp_scope="apex:mcp:payments:write",
         bank_scope="apex:bank:payments:write",
         # Payments carry their own per-transaction consent, not these.
         permissions=frozenset(),

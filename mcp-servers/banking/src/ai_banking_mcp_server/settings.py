@@ -136,27 +136,40 @@ class OutboundApiSettings(BaseSettings):
 
 
 class ConsentSettings(BaseSettings):
-    """The consent service (OpenFGC) this server records authorization against."""
+    """The consent store this server records authorization in: the Consent
+    Management API v2 of Asgardeo or WSO2 Identity Server (7.3+)."""
 
     model_config = SettingsConfigDict(env_file=_ENV_FILE, env_prefix="MCP_CONSENT__", extra="ignore")
 
+    #: The API root, `<org or server>/api/identity/consent-mgt/v2.0`.
     base_url: AnyHttpUrl
-    org_id: str
-    group_id: str
-    #: Purpose grouping the account-information permissions.
+    #: The organization's OIDC discovery document, for its token endpoint.
+    discovery_url: AnyHttpUrl
+    #: This server's machine-to-machine application on that organization,
+    #: authorized for the consent API (consent create/view/update, purpose view).
+    client_id: str
+    client_secret: SecretStr
+    #: Purposes the consents are created against, as seeded by
+    #: platform/consent/asgardeo/seed.sh.
     account_access_purpose_id: str
-    account_access_purpose_name: str = "account_information_access"
-    #: Namespace the consent elements were registered under. The service
-    #: resolves unqualified element names to "default" and rejects them.
-    element_namespace: str = "banking"
-    payment_purpose_id: str = ""
-    payment_purpose_name: str = "payment_initiation"
+    payment_purpose_id: str
+    #: Required by the API in practice: creation fails without it.
+    language: str = "en"
+    #: Names the customer's consent portal shows for the agent and the
+    #: application the customer used.
+    agent_name: str = "Apex Bank AI Assistant"
+    application_id: str = "apex-portal-client"
+    application_name: str = "Apex Bank"
     #: A payment authorization is meant to be answered now, not held open.
     payment_validity_seconds: int = 600
     #: How long an account-information consent stays valid. Kept short for an
     #: agent: an agent acts in bursts, so a long-lived standing grant is a
     #: larger risk than it is for a human-facing application.
     validity_seconds: int = 3600
+
+    @property
+    def token_endpoint(self) -> str:
+        return _discover(str(self.discovery_url))["token_endpoint"]
 
 
 class OutboundSettings:

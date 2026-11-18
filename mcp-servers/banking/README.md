@@ -29,7 +29,7 @@ src/ai_banking_mcp_server/
     token_verifier.py Verifies the tokens agents present to this server
   outbound/
     token_exchange.py Delegated exchange for a bank-audience token
-    consent.py        Consent service client (create, find, validate)
+    consent.py        Consent store client: Consent Management API v2 (create, find, approve, validate)
     accounts.py       The bank's account and balance calls
     transactions.py   The bank's transaction calls
     payments.py       The bank's payment call
@@ -54,11 +54,12 @@ Copy `.env.example` to `.env` and fill in the values.
 | `MCP_OUTBOUND_OAUTH__SCOPE` | Scopes requested on the bank token |
 | `MCP_OUTBOUND_OAUTH__AUDIENCE` | The bank's resource identifier; the `audience` of the exchanged token |
 | `MCP_OUTBOUND_API__BASE_URL` | Root of the bank's API. Every resource is a path beneath it, so there is one value to change and no way for two of them to drift apart |
-| `MCP_CONSENT__BASE_URL` | Consent service base URL |
-| `MCP_CONSENT__ORG_ID` / `MCP_CONSENT__GROUP_ID` | Headers the consent service requires on every call |
-| `MCP_CONSENT__ACCOUNT_ACCESS_PURPOSE_ID` / `_NAME` | The purpose consents for reading account data are created against |
-| `MCP_CONSENT__PAYMENT_PURPOSE_ID` / `_NAME` | The purpose payment authorizations are created against |
-| `MCP_CONSENT__ELEMENT_NAMESPACE` | Namespace for consent elements |
+| `MCP_CONSENT__BASE_URL` | Root of the consent store's Consent Management API v2 (`<org>/api/identity/consent-mgt/v2.0`), on Asgardeo or WSO2 Identity Server 7.3+ |
+| `MCP_CONSENT__DISCOVERY_URL` | That organization's discovery document, for its token endpoint |
+| `MCP_CONSENT__CLIENT_ID` / `MCP_CONSENT__CLIENT_SECRET` | This server's M2M application there, authorized for the consent API (consent create, view, update; purpose view) |
+| `MCP_CONSENT__ACCOUNT_ACCESS_PURPOSE_ID` | The purpose account-access consents are created against (`platform/consent/asgardeo/seed.sh` prints it) |
+| `MCP_CONSENT__PAYMENT_PURPOSE_ID` | The purpose payment authorizations are created against |
+| `MCP_CONSENT__AGENT_NAME` / `_APPLICATION_ID` / `_APPLICATION_NAME` | How the customer's consent portal names the agent and the application. Optional |
 | `MCP_CONSENT__VALIDITY_SECONDS` | How long an account-access consent stays valid |
 | `MCP_CONSENT__PAYMENT_VALIDITY_SECONDS` | How long a payment authorization stays valid. Deliberately short — it authorises one payment |
 | `MCP_ENV` | Runtime environment. Also selects the env file: `development` → `.env`, `staging` → `.env.staging`, `production` → `.env.production` |

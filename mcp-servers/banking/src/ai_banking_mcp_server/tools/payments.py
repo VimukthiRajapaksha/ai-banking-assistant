@@ -586,9 +586,6 @@ def register(
                         payee_account_number=str(saved_payee.get("accountNumber") or ""),
                         payee_bank=str(saved_payee.get("bank") or ""),
                         currency=str(saved_payee.get("currency") or ""),
-                        purpose_id=settings.outbound.consent.payment_purpose_id,
-                        purpose_name=settings.outbound.consent.payment_purpose_name,
-                        element_namespace=settings.outbound.consent.element_namespace,
                         validity_seconds=settings.outbound.consent.payment_validity_seconds,
                     )
                 except ConsentServiceError as exc:

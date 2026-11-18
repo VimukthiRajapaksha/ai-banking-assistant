@@ -347,13 +347,9 @@ async def clear(
                     required | plan_permissions(planned_tools(ctx)), scopes
                 )
                 created = await consent_client.create(
-                    consent_type="account-information",
                     subject=subject,
                     actor=actor,
                     permissions=requested,
-                    purpose_id=settings.outbound.consent.account_access_purpose_id,
-                    purpose_name=settings.outbound.consent.account_access_purpose_name,
-                    element_namespace=settings.outbound.consent.element_namespace,
                     validity_seconds=settings.outbound.consent.validity_seconds,
                 )
                 logger.info(

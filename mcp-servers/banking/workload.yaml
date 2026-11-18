@@ -6,6 +6,7 @@
 # card -> configs / Workload -> environment variables, marked secret):
 #   MCP_OUTBOUND_OAUTH__CLIENT_SECRET  apex-mcp-client's secret (APEX_MCP_CLIENT_SECRET)
 #   MCP_STEPUP__FLOW_SECRET            apex-mcp-client's flow secret (APEX_MCP_FLOW_SECRET)
+#   MCP_CONSENT__CLIENT_SECRET         the consent store's M2M application secret
 #   MCP_REQUEST_STATE__KEYS            64 hex chars; python -c "import secrets; print(secrets.token_hex(32))"
 # Values set in the console override the ones below, and need only a redeploy.
 apiVersion: openchoreo.dev/v1alpha1
@@ -24,7 +25,7 @@ configurations:
   env:
     # --- Tokens presented to this server (by the agent) ---------------------
     - name: MCP_INBOUND_OAUTH__DISCOVERY_URL
-      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
+      value: https://zh2p3wn6kb-iam.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
     # One resource server for the whole chain, so one audience.
     - name: MCP_INBOUND_OAUTH__AUDIENCE
       value: urn:apex
@@ -32,16 +33,16 @@ configurations:
     - name: MCP_INBOUND_OAUTH__REQUIRED_SCOPES
       value: ""
     - name: MCP_INBOUND_OAUTH__RESOURCE_SERVER_URL
-      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api
+      value: https://xhgdmq9g96-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api
     # Host headers the server answers to (the MCP SDK's DNS-rebinding check).
     # Anything else gets 421 "Invalid Host header", so the gateway host must be
     # listed. JSON list.
     - name: MCP_ALLOWED_HOSTS
-      value: '["j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com","localhost:*","127.0.0.1:*"]'
+      value: '["xhgdmq9g96-gw-p1.gateway.dp.dev.cloud.wso2.com","localhost:*","127.0.0.1:*"]'
 
     # --- This server's client, exchanging for bank-scoped tokens ------------
     - name: MCP_OUTBOUND_OAUTH__DISCOVERY_URL
-      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
+      value: https://zh2p3wn6kb-iam.gateway.dp.dev.cloud.wso2.com/.well-known/openid-configuration
     - name: MCP_OUTBOUND_OAUTH__CLIENT_ID
       value: apex-mcp-client
     - name: MCP_OUTBOUND_OAUTH__AUDIENCE
@@ -50,34 +51,32 @@ configurations:
       value: apex:bank:accounts:read apex:bank:accounts:balances:read apex:bank:accounts:transactions:read apex:bank:payees:read apex:bank:payments:write
     # Required by the settings model; no redirect flow runs on this hop.
     - name: MCP_OUTBOUND_OAUTH__REDIRECT_URI
-      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api/oauth/callback
+      value: https://xhgdmq9g96-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mcp-server-api/oauth/callback
 
     # --- The bank -------------------------------------------------------------
     - name: MCP_OUTBOUND_API__BASE_URL
-      value: https://j7y752d7v6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank-mock-backend-api
+      value: https://n7bqxrw8k6-gw-p1.gateway.dp.dev.cloud.wso2.com/apex-bank
 
     # --- Payment step-up (passkey), driven against ThunderID ----------------
     - name: MCP_STEPUP__BASE_URL
-      value: https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com
+      value: https://zh2p3wn6kb-iam.gateway.dp.dev.cloud.wso2.com
     - name: MCP_STEPUP__APPLICATION_ID
       value: apex-mcp-client
     - name: MCP_STEPUP__REQUIRE_PASSKEY
       value: "true"
 
-    # --- Consent service (OpenFGC) -- NOT HOSTED YET --------------------------
-    # Placeholders so the server starts. Every data tool checks consent first,
-    # so account, transaction and payment calls fail until OpenFGC is deployed
-    # and these point at it.
+    # --- Consent store: Asgardeo Consent Management API v2 --------------------
     - name: MCP_CONSENT__BASE_URL
-      value: https://consent.invalid/api/v1
-    - name: MCP_CONSENT__ORG_ID
-      value: apex
-    - name: MCP_CONSENT__GROUP_ID
-      value: apex-banking
+      value: https://api.asgardeo.io/t/wso2solutionsbfsi/api/identity/consent-mgt/v2.0
+    - name: MCP_CONSENT__DISCOVERY_URL
+      value: https://api.asgardeo.io/t/wso2solutionsbfsi/oauth2/token/.well-known/openid-configuration
+    - name: MCP_CONSENT__CLIENT_ID
+      value: fV8phq7duGA94m4SibDMPeY8KGAa
+    # From platform/consent/asgardeo/seed.sh.
     - name: MCP_CONSENT__ACCOUNT_ACCESS_PURPOSE_ID
-      value: not-provisioned
+      value: 84173650-49cb-496b-82c6-ae778d9d70ce
     - name: MCP_CONSENT__PAYMENT_PURPOSE_ID
-      value: not-provisioned
+      value: bbe4fe03-2d08-4042-9dfb-74f37b6e5266
 
     # --- Runtime ----------------------------------------------------------------
     # Selects the env file to load; none ships in the image, so the values come

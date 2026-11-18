@@ -66,10 +66,18 @@ def build(settings: Settings) -> MCPServer:
         client_secret=settings.outbound.oauth.client_secret.get_secret_value(),
         resource=settings.outbound.oauth.audience,
     )
+    consent = settings.outbound.consent
     consent_client = ConsentClient(
-        base_url=str(settings.outbound.consent.base_url),
-        org_id=settings.outbound.consent.org_id,
-        group_id=settings.outbound.consent.group_id,
+        base_url=str(consent.base_url),
+        token_endpoint=consent.token_endpoint,
+        client_id=consent.client_id,
+        client_secret=consent.client_secret.get_secret_value(),
+        account_access_purpose_id=consent.account_access_purpose_id,
+        payment_purpose_id=consent.payment_purpose_id,
+        language=consent.language,
+        agent_name=consent.agent_name,
+        application_id=consent.application_id,
+        application_name=consent.application_name,
     )
 
     for register_tool in (register_accounts, register_transactions, register_payees, register_payments):
