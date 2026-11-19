@@ -2,9 +2,10 @@
 # when the WSO2 Developer Platform builds this web application. A web
 # application gets its own host name, so the app is served from the root.
 #
-# Settings are not here: they reach the browser through /config.js, which is
-# mounted per environment (Configure & deploy -> file mount, path
-# /app/dist/config.js; template in config.js.example).
+# Settings are not here: they are set per environment as VITE_* environment
+# variables (the keys of config.js.example), which server.mjs serves to the
+# browser as /config.js. A file mount does not work for this component type:
+# the platform renders the file but does not mount it into the container.
 apiVersion: openchoreo.dev/v1alpha1
 metadata:
   name: apex-bank-portal

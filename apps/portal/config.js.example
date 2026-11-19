@@ -1,6 +1,7 @@
-// Template for the WSO2 Developer Platform file mount: Deploy -> Configure &
-// Deploy -> File Mount, mount path /app/dist/config.js (the web root the
-// image serves, next to index.html). One copy per environment. Replace each <...>.
+// The portal's run-time settings. On the WSO2 Developer Platform set each key
+// below as an environment variable of the same name (Configure & deploy);
+// server.mjs serves every VITE_* variable to the browser as /config.js. Run
+// elsewhere, copy this file over dist/config.js instead. Replace each <...>.
 //
 // Everything here reaches the browser: no secrets. Keys are the same as
 // .env.example; src/config.ts reads this first and .env only as a fallback.

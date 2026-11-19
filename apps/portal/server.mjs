@@ -13,6 +13,18 @@ import { extname, join, normalize } from 'node:path';
 const ROOT = join(import.meta.dirname, 'dist');
 const PORT = Number(process.env.PORT ?? 18000);
 
+// /config.js from the environment: every VITE_* variable, as src/config.ts
+// reads window.configs. Built once at start; with no VITE_* variable set, the
+// file in dist/ is served instead. The platform's web-application type does
+// not mount configured files into the container, so environment variables are
+// how settings reach it there. Everything here reaches the browser: no secrets.
+const runtimeConfig = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => key.startsWith('VITE_')),
+);
+const CONFIG_JS = Object.keys(runtimeConfig).length
+  ? `window.configs = ${JSON.stringify(runtimeConfig, null, 2)};\n`
+  : null;
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -41,6 +53,15 @@ createServer(async (req, res) => {
     return;
   }
   const urlPath = new URL(req.url ?? '/', 'http://localhost').pathname;
+  if (urlPath === '/config.js' && CONFIG_JS) {
+    res.writeHead(200, {
+      'Content-Type': TYPES['.js'],
+      'Cache-Control': 'no-cache',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.end(req.method === 'HEAD' ? undefined : CONFIG_JS);
+    return;
+  }
   // Hashed assets never change; index.html and the per-environment config.js
   // must be re-read on every load.
   const immutable = urlPath.startsWith('/assets/');
