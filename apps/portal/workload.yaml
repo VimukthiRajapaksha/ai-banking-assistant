@@ -1,0 +1,16 @@
+# OpenChoreo workload descriptor, read from the component directory (appPath)
+# when the WSO2 Developer Platform builds this web application. A web
+# application gets its own host name, so the app is served from the root.
+#
+# Settings are not here: they reach the browser through /config.js, which is
+# mounted per environment (Configure & deploy -> file mount, path
+# /app/dist/config.js; template in config.js.example).
+apiVersion: openchoreo.dev/v1alpha1
+metadata:
+  name: apex-bank-portal
+endpoints:
+  - name: web
+    port: 18000
+    type: HTTP
+    visibility:
+      - external

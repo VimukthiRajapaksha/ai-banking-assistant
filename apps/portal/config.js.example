@@ -1,11 +1,11 @@
 // Template for the WSO2 Developer Platform file mount: Deploy -> Configure &
-// Deploy -> File Mount, mount path /config.js (the web root, next to
-// index.html). One copy per environment. Replace each <...>.
+// Deploy -> File Mount, mount path /app/dist/config.js (the web root the
+// image serves, next to index.html). One copy per environment. Replace each <...>.
 //
 // Everything here reaches the browser: no secrets. Keys are the same as
 // .env.example; src/config.ts reads this first and .env only as a fallback.
 window.configs = {
-  VITE_AUTH__BASE_URL: 'https://wc-01a16770-a7831a60-development-identity-platform.gateway.dp.dev.cloud.wso2.com',
+  VITE_AUTH__BASE_URL: 'https://<identity server host>',
   VITE_AUTH__CLIENT_ID: 'apex-portal-client',
   // Both must be registered on the ThunderID app (APEX_PORTAL_ORIGIN in
   // platform/identity/thunderid/apex-thunderid.env, then re-import).
@@ -19,9 +19,9 @@ window.configs = {
   VITE_AUTH__AUDIENCE: 'urn:apex',
 
   // Called from the browser, so each must allow CORS from the portal's origin.
-  VITE_BANK_API__BASE_URL: '<bank API base URL>',
+  VITE_BANK_API__BASE_URL: 'https://<API gateway host>/apex-bank',
   // The agent's root; the app adds /chat and /security/passkey.
-  VITE_AGENT__BASE_URL: '<agent URL>',
+  VITE_AGENT__BASE_URL: 'https://<API gateway host>/apex-agent',
 
   // Optional: a link in the account menu. Leave out to hide it.
   // VITE_CONSENT__PORTAL_URL: '<consent portal URL>',
