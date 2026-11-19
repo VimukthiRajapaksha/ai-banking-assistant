@@ -7,16 +7,17 @@ WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
-# The path the app is served under. On the WSO2 Developer Platform a service is
-# reached at /<component>-<endpoint> on a host it shares with others; build
-# with --build-arg BASE_PATH= to serve from the root instead.
-ARG BASE_PATH=/apex-bank-portal-web
+# The path the app is served under: the root by default, as on a WSO2
+# Developer Platform web app, which has a host of its own. Behind a shared host
+# (a service, reached at /<component>-<endpoint>), build with
+# --build-arg BASE_PATH=/<component>-<endpoint>.
+ARG BASE_PATH=
 ENV BASE_PATH=$BASE_PATH
 RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-ARG BASE_PATH=/apex-bank-portal-web
+ARG BASE_PATH=
 ENV NODE_ENV=production PORT=18000 BASE_PATH=$BASE_PATH
 COPY --from=build /app/dist ./dist
 COPY server.mjs ./
