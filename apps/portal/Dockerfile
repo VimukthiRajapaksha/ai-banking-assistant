@@ -1,17 +1,23 @@
 # syntax=docker/dockerfile:1
 # Production image: the built app, served by server.mjs. Settings come from
-# /config.js at run time (see config.js.example), so one image serves every
-# environment; on the WSO2 Developer Platform that file is a file mount.
+# config.js at run time, served from the VITE_* environment variables (see
+# config.js.example), so one image serves every environment.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
+# The path the app is served under. On the WSO2 Developer Platform a service is
+# reached at /<component>-<endpoint> on a host it shares with others; build
+# with --build-arg BASE_PATH= to serve from the root instead.
+ARG BASE_PATH=/apex-bank-portal-web
+ENV BASE_PATH=$BASE_PATH
 RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-ENV NODE_ENV=production PORT=18000
+ARG BASE_PATH=/apex-bank-portal-web
+ENV NODE_ENV=production PORT=18000 BASE_PATH=$BASE_PATH
 COPY --from=build /app/dist ./dist
 COPY server.mjs ./
 # Numeric, in 10000-20000: the WSO2 Developer Platform requires a non-root user

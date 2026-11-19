@@ -9,6 +9,10 @@ endpoints:
     # The Next.js server's port (PORT in the Dockerfile).
     port: 18060
     type: HTTP
+    # The public path is /<component>-<endpoint>; the gateway rewrites it to
+    # basePath, so keeping the two equal passes it through unchanged, as the
+    # app (built with the same BASE_PATH) expects.
+    basePath: /apex-consent-portal-web
     # external: customers open it in their browser. Sign-in is the app's own
     # (ThunderID); the gateway adds no authorization in front of it.
     visibility:

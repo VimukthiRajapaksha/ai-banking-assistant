@@ -32,7 +32,7 @@ export function TopAppBar({ onToggleNav, navOpen }: { onToggleNav: () => void; n
           <Header.BrandLogo>
             <Box
               component="img"
-              src="/apex-logo.png"
+              src={`${import.meta.env.BASE_URL}apex-logo.png`}
               alt=""
               aria-hidden
               sx={{ width: 28, height: 28, display: 'block', objectFit: 'contain' }}

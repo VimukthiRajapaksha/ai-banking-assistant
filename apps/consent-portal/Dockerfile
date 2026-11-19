@@ -6,6 +6,11 @@ WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
+# The path the portal is served under. On the WSO2 Developer Platform a service
+# is reached at /<component>-<endpoint> on a host it shares with others; build
+# with --build-arg BASE_PATH= to serve from the root instead.
+ARG BASE_PATH=/apex-consent-portal-web
+ENV BASE_PATH=$BASE_PATH
 RUN npm run build
 
 FROM node:22-alpine

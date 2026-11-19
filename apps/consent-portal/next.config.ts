@@ -1,6 +1,13 @@
 import type { NextConfig } from 'next';
 
+// The path prefix the portal is served under, fixed at build time; empty for
+// the root. On the WSO2 Developer Platform a service is reached at
+// /<component>-<endpoint> on a shared host -- see the Dockerfile.
+const basePath = process.env.BASE_PATH || '';
+
 const nextConfig: NextConfig = {
+  basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   // A self-contained server for the Docker image: `node server.js`, no
   // node_modules install at run time.
   output: 'standalone',

@@ -12,12 +12,15 @@ import { extname, join, normalize } from 'node:path';
 
 const ROOT = join(import.meta.dirname, 'dist');
 const PORT = Number(process.env.PORT ?? 18000);
+// The path prefix the app was built for (vite `base`), stripped from each
+// request before it is looked up in dist/. Empty for the root.
+const BASE_PATH = (process.env.BASE_PATH ?? '').replace(/\/+$/, '');
 
 // /config.js from the environment: every VITE_* variable, as src/config.ts
 // reads window.configs. Built once at start; with no VITE_* variable set, the
-// file in dist/ is served instead. The platform's web-application type does
-// not mount configured files into the container, so environment variables are
-// how settings reach it there. Everything here reaches the browser: no secrets.
+// file in dist/ is served instead. Environment variables, rather than a
+// mounted file, so the same image serves any environment unchanged.
+// Everything here reaches the browser: no secrets.
 const runtimeConfig = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => key.startsWith('VITE_')),
 );
@@ -52,7 +55,14 @@ createServer(async (req, res) => {
     res.writeHead(405, { Allow: 'GET, HEAD' }).end();
     return;
   }
-  const urlPath = new URL(req.url ?? '/', 'http://localhost').pathname;
+  let urlPath = new URL(req.url ?? '/', 'http://localhost').pathname;
+  if (BASE_PATH) {
+    if (urlPath !== BASE_PATH && !urlPath.startsWith(`${BASE_PATH}/`)) {
+      res.writeHead(404).end();
+      return;
+    }
+    urlPath = urlPath.slice(BASE_PATH.length) || '/';
+  }
   if (urlPath === '/config.js' && CONFIG_JS) {
     res.writeHead(200, {
       'Content-Type': TYPES['.js'],

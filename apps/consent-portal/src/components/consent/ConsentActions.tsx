@@ -13,6 +13,7 @@ import {
   Stack,
 } from '@wso2/oxygen-ui';
 import type { ConsentView } from '@/lib/consent/model';
+import { withBase, withoutBase } from '@/lib/basePath';
 
 type Action = 'approve' | 'reject' | 'revoke';
 
@@ -64,10 +65,12 @@ export function ConsentActions({ view }: { view: ConsentView }) {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(`/api/consents/${encodeURIComponent(view.id)}/${action}`, { method: 'POST' });
+      const response = await fetch(withBase(`/api/consents/${encodeURIComponent(view.id)}/${action}`), { method: 'POST' });
       if (response.status === 401) {
         // The session ended; sign in again and come straight back here.
-        window.location.assign(`/auth/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
+        window.location.assign(
+          withBase(`/auth/login?returnTo=${encodeURIComponent(withoutBase(window.location.pathname))}`),
+        );
         return;
       }
       if (!response.ok) {

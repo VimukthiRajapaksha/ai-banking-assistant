@@ -15,7 +15,7 @@ import { config } from '@/lib/config';
 export async function GET(request: NextRequest) {
   const tx = await unsealTransaction(request.cookies.get(TRANSACTION_COOKIE)?.value);
   const fail = (reason: string) => {
-    const url = new URL('/signed-out', config.appBaseUrl);
+    const url = config.appUrl('/signed-out');
     url.searchParams.set('error', reason);
     const response = NextResponse.redirect(url);
     response.cookies.delete(TRANSACTION_COOKIE);
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     // the redirect_uri exactly as it was registered.
     const callbackUrl = new URL(`${config.auth.redirectUri}${request.nextUrl.search}`);
     const session = await completeSignIn(callbackUrl, tx.state, tx.codeVerifier);
-    const response = NextResponse.redirect(new URL(tx.returnTo, config.appBaseUrl));
+    const response = NextResponse.redirect(config.appUrl(tx.returnTo));
     response.cookies.set(SESSION_COOKIE, await sealSession(session), {
       ...sessionCookieOptions,
       maxAge: SESSION_MAX_AGE,

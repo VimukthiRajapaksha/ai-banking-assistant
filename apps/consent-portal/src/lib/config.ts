@@ -18,8 +18,14 @@ function required(key: string): string {
 const trim = (url: string) => url.replace(/\/+$/, '');
 
 export const config = {
+  /** The portal's public root, including any path prefix it is served under. */
   get appBaseUrl() {
     return trim(required('APP__BASE_URL'));
+  },
+  /** An absolute URL for an app path such as `/signed-out`. `new URL(path, base)`
+   * would drop the base's own path prefix. */
+  appUrl(path: string) {
+    return new URL(`${config.appBaseUrl}${path}`);
   },
   auth: {
     get baseUrl() {

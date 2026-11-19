@@ -18,7 +18,11 @@ function unauthenticated(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.json({ code: 'unauthenticated', message: 'Sign in again to continue.' }, { status: 401 });
   }
-  const login = new URL('/auth/login', request.url);
+  // From nextUrl, which carries the base path: a URL built from request.url
+  // would lose it.
+  const login = request.nextUrl.clone();
+  login.pathname = '/auth/login';
+  login.search = '';
   login.searchParams.set('returnTo', `${request.nextUrl.pathname}${request.nextUrl.search}`);
   const response = NextResponse.redirect(login);
   response.cookies.delete(SESSION_COOKIE);
@@ -48,6 +52,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except sign-in itself, the signed-out page, the health check,
-  // and static files.
-  matcher: ['/((?!auth/|signed-out|api/health|_next/|apex-logo\\.png|favicon\\.ico).*)'],
+  // and static files. '/' is listed on its own: under a base path the bare
+  // prefix is not matched by the pattern.
+  matcher: ['/', '/((?!auth/|signed-out|api/health|_next/|apex-logo\\.png|favicon\\.ico).*)'],
 };

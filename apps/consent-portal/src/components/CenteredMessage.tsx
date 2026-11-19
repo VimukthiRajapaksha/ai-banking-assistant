@@ -3,6 +3,7 @@
 import NextLink from 'next/link';
 import { Box, Button, CardContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { GlassCard } from './GlassCard';
+import { withBase } from '@/lib/basePath';
 
 /** A full-page message outside the signed-in shell: signed out, sign-in
  * failed, page not found. */
@@ -20,7 +21,7 @@ export function CenteredMessage({
       <GlassCard sx={{ maxWidth: 420, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Stack spacing={2} alignItems="center" sx={{ textAlign: 'center' }}>
-            <Box component="img" src="/apex-logo.png" alt="Apex Bank" sx={{ width: 48, height: 48 }} />
+            <Box component="img" src={withBase('/apex-logo.png')} alt="Apex Bank" sx={{ width: 48, height: 48 }} />
             <Typography variant="h6" component="h1">
               {title}
             </Typography>

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AppShell, Box, ColorSchemeToggle, Header, Sidebar, UserMenu } from '@wso2/oxygen-ui';
 import { ArrowUpRight, Clock3, House, LogOut, Menu, ShieldCheck } from '@wso2/oxygen-ui-icons-react';
+import { withBase } from '@/lib/basePath';
 
 export interface ShellUser {
   name?: string;
@@ -57,7 +58,7 @@ export function PortalShell({
             <Header.BrandLogo>
               <Box
                 component="img"
-                src="/apex-logo.png"
+                src={withBase('/apex-logo.png')}
                 alt=""
                 aria-hidden
                 sx={{ width: 28, height: 28, display: 'block', objectFit: 'contain' }}
@@ -93,7 +94,7 @@ export function PortalShell({
           </Header.Actions>
         </Header>
         {/* Sign-out is a POST (see auth/logout), so it is a form, not a link. */}
-        <form ref={logoutForm} method="post" action="/auth/logout" hidden />
+        <form ref={logoutForm} method="post" action={withBase('/auth/logout')} hidden />
       </AppShell.Navbar>
 
       <AppShell.Sidebar>

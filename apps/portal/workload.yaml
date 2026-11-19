@@ -1,11 +1,10 @@
 # OpenChoreo workload descriptor, read from the component directory (appPath)
-# when the WSO2 Developer Platform builds this web application. A web
-# application gets its own host name, so the app is served from the root.
+# when the WSO2 Developer Platform builds this service. The app is served under
+# /<component>-<endpoint> on a shared host, the BASE_PATH it is built for.
 #
 # Settings are not here: they are set per environment as VITE_* environment
 # variables (the keys of config.js.example), which server.mjs serves to the
-# browser as /config.js. A file mount does not work for this component type:
-# the platform renders the file but does not mount it into the container.
+# browser as <base>/config.js.
 apiVersion: openchoreo.dev/v1alpha1
 metadata:
   name: apex-bank-portal
@@ -13,5 +12,8 @@ endpoints:
   - name: web
     port: 18000
     type: HTTP
+    # The gateway rewrites the public prefix to basePath; keeping the two equal
+    # passes it through unchanged, as server.mjs expects.
+    basePath: /apex-bank-portal-web
     visibility:
       - external

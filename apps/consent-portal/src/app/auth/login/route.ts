@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // ThunderID unreachable (discovery failed). Say so, rather than a 500.
     console.error('sign-in unavailable:', error instanceof Error ? error.message : error);
-    return NextResponse.redirect(new URL('/signed-out?error=idp_unavailable', config.appBaseUrl));
+    return NextResponse.redirect(config.appUrl('/signed-out?error=idp_unavailable'));
   }
 
   const response = NextResponse.redirect(target);

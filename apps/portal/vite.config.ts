@@ -11,6 +11,10 @@ import { defineConfig } from 'vite'
  * directly, which is no longer how it is served.
  */
 export default defineConfig({
+  // The path the app is served under, at build time; '/' by default. On the
+  // WSO2 Developer Platform a service is reached at /<component>-<endpoint> on a
+  // shared host -- see the Dockerfile. Must end with '/'.
+  base: process.env.BASE_PATH ? `${process.env.BASE_PATH.replace(/\/+$/, '')}/` : '/',
   plugins: [react()],
   server: {
     host: true,
