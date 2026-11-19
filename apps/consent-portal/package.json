@@ -1,0 +1,37 @@
+{
+  "name": "ai-banking-consent-portal",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 18060",
+    "build": "next build",
+    "start": "next start --port 18060",
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@wso2/oxygen-ui": "^0.13.1",
+    "@wso2/oxygen-ui-icons-react": "^0.13.1",
+    "iron-session": "^9.0.1",
+    "jose": "^6.2.14",
+    "next": "^16.4.3",
+    "openid-client": "^6.8.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "oxlint": "^1.81.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

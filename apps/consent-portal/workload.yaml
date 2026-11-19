@@ -1,0 +1,15 @@
+# OpenChoreo workload descriptor, read from the component directory (appPath)
+# when the WSO2 Developer Platform builds this service. Without it the
+# generated workload has no endpoint and a Service component fails to deploy.
+apiVersion: openchoreo.dev/v1alpha1
+metadata:
+  name: apex-consent-portal
+endpoints:
+  - name: web
+    # The Next.js server's port (PORT in the Dockerfile).
+    port: 18060
+    type: HTTP
+    # external: customers open it in their browser. Sign-in is the app's own
+    # (ThunderID); the gateway adds no authorization in front of it.
+    visibility:
+      - external

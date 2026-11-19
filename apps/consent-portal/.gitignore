@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+*.log
+
+# All local env variants (secrets); .env.example stays tracked
+.env*
+!.env.example
