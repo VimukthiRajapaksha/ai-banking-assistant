@@ -26,6 +26,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+from pydantic_ai.messages import ModelRequest, ModelResponse, ToolCallPart, ToolReturnPart, UserPromptPart
 from pydantic_graph import End
 from starlette.requests import Request
 
@@ -37,7 +38,7 @@ from ai_banking_agent.identity.token_exchange import (
     exchange_for_mcp_token,
 )
 from ai_banking_agent.identity.token_verifier import CustomerTokenVerifier
-from ai_banking_agent.mcp_client import ConsentRequired, turn_connection
+from ai_banking_agent.mcp_client import ConsentRequired, call_tool, turn_connection
 from ai_banking_agent.security import build_router as build_security_router
 from ai_banking_agent.sessions import ElicitationResponse, SessionStore
 from ai_banking_agent.settings import get_settings
@@ -124,7 +125,7 @@ def _bearer_token(request: Request) -> str:
     return token
 
 
-async def _run_turn(chat_agent, message: str, runtime):
+async def _run_turn(chat_agent, message: str | None, runtime, history=None):
     """One agent turn, driven a node at a time so the turn's tool plan can be
     read off the model response *before* its tool calls run.
 
@@ -135,7 +136,8 @@ async def _run_turn(chat_agent, message: str, runtime):
     driving `next()` (pydantic_ai/agent/abstract.py), so the run span,
     capability hooks and message history are identical either way.
     """
-    async with chat_agent.iter(message, message_history=runtime.message_history, deps=runtime) as run:
+    history = runtime.message_history if history is None else history
+    async with chat_agent.iter(message, message_history=history, deps=runtime) as run:
         node = run.next_node
         while not isinstance(node, End):
             # A capability may short-circuit the run, leaving a result with
@@ -150,6 +152,28 @@ async def _run_turn(chat_agent, message: str, runtime):
             node = await run.next(node)
     assert run.result is not None, "the agent run did not finish"
     return run.result
+
+
+async def _resume_turn(chat_agent, server_url: str, message: str, tool: str, runtime):
+    """Finish a turn that stopped for the customer's answer to a form.
+
+    The tool that raised the form is called again straight away, with the
+    arguments it was raised for and the answer: the model already chose that
+    call, so asking it to choose again cost a full model round trip on every
+    approval. The model is then run once, on a history that holds the
+    question, that tool call and its result, to write the reply -- or to call
+    further tools, as in any turn.
+    """
+    arguments = dict(runtime.pending_arguments.get(tool) or {})
+    output = await call_tool(server_url, tool, runtime)
+    call_id = f"resume-{secrets.token_hex(8)}"
+    history = [
+        *runtime.message_history,
+        ModelRequest(parts=[UserPromptPart(content=message)]),
+        ModelResponse(parts=[ToolCallPart(tool_name=tool, args=arguments, tool_call_id=call_id)]),
+        ModelRequest(parts=[ToolReturnPart(tool_name=tool, content=output, tool_call_id=call_id)]),
+    ]
+    return await _run_turn(chat_agent, None, runtime, history=history)
 
 
 def build_app() -> FastAPI:
@@ -231,6 +255,7 @@ def build_app() -> FastAPI:
             logger.warning("Rejected session replay under a different subject")
             raise HTTPException(status_code=403, detail="Session does not belong to this user") from None
 
+        answered_tool = None
         if req.elicitation_response is not None:
             # Routed to the tool that raised this form. Without that, a turn
             # with two outstanding forms delivers the answer to whichever tool
@@ -284,7 +309,12 @@ def build_app() -> FastAPI:
 
             try:
                 async with turn_connection(str(settings.mcp.server_url), runtime):
-                    result = await _run_turn(chat_agent, req.message, runtime)
+                    if answered_tool is not None:
+                        result = await _resume_turn(
+                            chat_agent, str(settings.mcp.server_url), req.message, answered_tool, runtime
+                        )
+                    else:
+                        result = await _run_turn(chat_agent, req.message, runtime)
             except ConsentRequired as exc:
                 logger.info("Consent required for this request")
                 runtime.elicitation_tool[exc.key] = exc.tool

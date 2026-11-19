@@ -95,16 +95,22 @@ async def _open_session(server_url: str, runtime: SessionRuntime) -> AsyncIterat
 
 @asynccontextmanager
 async def turn_connection(server_url: str, runtime: SessionRuntime) -> AsyncIterator[None]:
-    """Hold one MCP session for the duration of a /chat turn.
+    """List the MCP server's tools on a conversation's first turn, and hold
+    that session for the turn.
 
-    Discovery and the tool listing happen here, up front, the way any MCP
-    client connects -- not lazily inside the first tool call. The listing is
-    what the model's tools are built from, and it needs the customer's
-    delegated token, which is why it is per turn rather than at startup. If the server
-    cannot be reached the turn still runs: a reply that needs no tool should
-    not fail because the bank is down, and a tool call then opens its own
-    session and reports the failure where it belongs.
+    The listing is what the model's tools are built from, and it needs the
+    customer's delegated token, which is why it happens in a turn rather than
+    at startup. It is kept for the rest of the conversation: the server's
+    tools do not change mid-conversation, and listing them again cost two
+    round trips on every turn. Later turns hold no session, so a turn that
+    calls no tool makes no MCP call at all, and a tool call opens its own
+    (call_tool). If the server cannot be reached the turn still runs: a reply
+    that needs no tool should not fail because the bank is down, and a tool
+    call then reports the failure where it belongs.
     """
+    if runtime.mcp_tools:
+        yield
+        return
     try:
         async with AsyncExitStack() as stack:
             try:
@@ -124,7 +130,6 @@ async def turn_connection(server_url: str, runtime: SessionRuntime) -> AsyncIter
                 yield
             finally:
                 runtime.mcp_session = None
-                runtime.mcp_tools = []
     except BaseExceptionGroup as group:
         # The whole turn runs inside the SDK's anyio task group, which wraps
         # anything the turn raises -- so ConsentRequired came out as an

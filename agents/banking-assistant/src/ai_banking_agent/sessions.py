@@ -99,13 +99,14 @@ class SessionRuntime:
     # consent can cover the whole turn. Advisory; the server clamps it.
     planned_tools: list[str] = field(default_factory=list)
 
-    # The MCP session for the turn in progress, if one could be opened.
-    # Never outlives the turn -- see mcp_client.turn_connection.
+    # The MCP session held for the turn that listed the tools, if one could be
+    # opened. Never outlives that turn -- see mcp_client.turn_connection.
     mcp_session: ClientSession | None = None
 
-    # The MCP server's tool definitions, listed when that session opened. The
-    # model's tools are built from these, so the server is the only place a
-    # tool is described -- see chat_agent.build_chat_agent.
+    # The MCP server's tool definitions, listed on the conversation's first
+    # turn and kept for the rest of it. The model's tools are built from
+    # these, so the server is the only place a tool is described -- see
+    # chat_agent.build_chat_agent.
     mcp_tools: list[Tool] = field(default_factory=list)
 
     # Cleared once a data tool has succeeded: consent exists from then on, so
