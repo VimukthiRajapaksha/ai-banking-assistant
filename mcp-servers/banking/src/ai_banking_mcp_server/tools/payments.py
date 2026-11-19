@@ -643,7 +643,7 @@ def register(
                     settings=settings, actor_chain=actor_chain, ctx=ctx, token_cache=token_cache, key=key
                 )
                 await consent_client.approve(
-                    consent_id=consent_id, user_id=subject, account_id=str(account_id),
+                    record=record, user_id=subject, account_id=str(account_id),
                     account=next((a for a in funding if str(a.get("id")) == str(account_id)), None),
                 )
                 audit.info(

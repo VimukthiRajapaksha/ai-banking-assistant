@@ -314,6 +314,7 @@ async def clear(
             # looking for an active consent, because applying it is what makes
             # one active.
             action = answered(ctx, ELICITATION_KEY)
+            consent = None
             if action is not None:
                 consent_id = pending_consent_id(ctx)
                 if consent_id is None:
@@ -333,13 +334,18 @@ async def clear(
                 if action != "accept":
                     audit.info("DECLINED consent=%s subject=%s actor=%s", consent_id, subject, actor)
                     return messages.ACCESS_DECLINED
-                await consent_client.approve(consent_id=consent_id, user_id=subject)
+                # The consent as approved: the update answers with it, so this
+                # request needs no further lookup or validation of it.
+                consent = await consent_client.approve(record=record, user_id=subject)
                 audit.info(
                     "APPROVED consent=%s subject=%s actor=%s tool=%s", consent_id, subject, actor, tool
                 )
+            else:
+                # Read in full just now: its state, expiry, owner and
+                # permissions are as current as a separate validation would be.
+                consent = await consent_client.find_active(subject=subject, actor=actor)
 
-            consent = await consent_client.find_active(subject=subject, actor=actor)
-            if consent is None or not required <= consent.permissions:
+            if consent is None or not consent.active or not required <= consent.permissions:
                 # The invoked tool's own permissions always count -- it is
                 # actually being called. A declared plan may only widen this by
                 # non-restricted permissions, and never past the token's scopes.
@@ -358,15 +364,6 @@ async def clear(
                 )
                 return consent_form(
                     requested, settings.outbound.consent.validity_seconds, created.consent_id
-                )
-
-            if not await consent_client.validate(
-                consent_id=consent.consent_id, subject=subject, permissions=required
-            ):
-                return (
-                    "The bank rejected the customer's existing approval for account access (it may have "
-                    "expired or been withdrawn), so nothing was accessed. Do not retry in this turn. "
-                    "Tell the customer and suggest they try again in a moment."
                 )
         except ConsentServiceError as exc:
             logger.warning("Consent service unavailable: %s", exc)

@@ -20,8 +20,8 @@ spec -- platform/consent/asgardeo/README.md):
   live consent per agent and purpose.
 * Nothing guards state transitions, so `approve` checks for PENDING itself.
 * A PATCH of `properties` replaces the whole map: read, merge, then write.
-* Creation answers with the id only, and list rows carry no elements, so the
-  record is read back with GET.
+* Creation answers with the id only (the record is built from what was sent),
+  and list rows carry no elements (each is read with GET).
 * `POST /consents/{id}/revoke` with no body is refused with 411.
 """
 
@@ -30,7 +30,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -96,6 +96,9 @@ class ConsentRecord:
     #: Only set on an approved payment consent: the funding account the
     #: customer picked when approving.
     debtor_account: str | None = None
+    #: The record's properties as stored, which a change must merge into: a
+    #: PATCH of `properties` replaces the whole map.
+    properties: dict[str, str] = field(default_factory=dict)
 
     @property
     def active(self) -> bool:
@@ -129,6 +132,7 @@ def _record(payload: dict) -> ConsentRecord:
         subject=str(payload.get("subjectId") or ""),
         actor=str(payload.get("serviceId") or ""),
         debtor_account=properties.get(PROP_DEBTOR_ACCOUNT_ID) or None,
+        properties=dict(properties),
     )
 
 
@@ -257,7 +261,17 @@ class ConsentClient:
             "properties": {k: v for k, v in properties.items() if v},
         }
         created = await self._request("POST", "/consents", json=payload)
-        return await self.get(str(created["id"]))
+        # Creation answers with the id only. The rest is what was just sent, so
+        # it is not read back: a new consent with an authorizer is PENDING.
+        return ConsentRecord(
+            consent_id=str(created["id"]),
+            status=STATE_PENDING,
+            permissions=elements,
+            expiration_time=payload["expiryTime"],
+            subject=subject,
+            actor=actor,
+            properties=dict(payload["properties"]),
+        )
 
     def _common_properties(self, *, subject: str, actor: str, client_id: str = "") -> dict[str, str]:
         return {
@@ -321,32 +335,38 @@ class ConsentClient:
         return record
 
     async def approve(
-        self, *, consent_id: str, user_id: str, account_id: str | None = None, account: dict | None = None
-    ) -> None:
-        """Record the customer's approval, moving the consent to ACTIVE.
+        self,
+        *,
+        record: ConsentRecord,
+        user_id: str,
+        account_id: str | None = None,
+        account: dict | None = None,
+    ) -> ConsentRecord:
+        """Record the customer's approval, moving the consent to ACTIVE, and
+        return the consent as approved.
 
         The customer answers in the chat widget; that answer reaches this
         server through the agent, and this server writes it down. `user_id` is
         the subject from this server's own verified token, not anything the
         caller supplied.
 
-        Only a PENDING consent is approved. The API would also move a REVOKED
-        or REJECTED one back to ACTIVE, so the state is checked here.
+        `record` is the consent as the caller has just read it (to check who it
+        belongs to), so it is not read again here. Only a PENDING consent is
+        approved: the API would also move a REVOKED or REJECTED one back to
+        ACTIVE, so the state is checked here.
         """
-        current = await self._request("GET", f"/consents/{consent_id}")
-        state = str(current.get("state", "")).upper()
-        if state == STATE_ACTIVE:
+        if record.status == STATE_ACTIVE:
             # Already approved: a retried round, or the portal got there first.
-            logger.info("Consent %s is already ACTIVE; nothing to approve", consent_id)
-            return
-        if state != STATE_PENDING:
-            raise ConsentServiceError(f"consent {consent_id} is {state or 'unknown'}, not PENDING")
+            logger.info("Consent %s is already ACTIVE; nothing to approve", record.consent_id)
+            return record
+        if record.status != STATE_PENDING:
+            raise ConsentServiceError(f"consent {record.consent_id} is {record.status or 'unknown'}, not PENDING")
         body: dict = {"authorizations": [{"userId": user_id, "state": "APPROVED"}]}
         if account_id:
             # A payment approval also records which account it is drawn from:
             # it is part of what the customer approved, not a later choice.
             # The PATCH replaces the whole map, so the current one is merged.
-            body["properties"] = dict(current.get("properties") or {}) | {
+            body["properties"] = record.properties | {
                 k: v
                 for k, v in {
                     PROP_DEBTOR_ACCOUNT_ID: account_id,
@@ -355,7 +375,23 @@ class ConsentClient:
                 }.items()
                 if v
             }
-        await self._request("PATCH", f"/consents/{consent_id}", json=body)
+        updated = await self._request("PATCH", f"/consents/{record.consent_id}", json=body)
+        # The response is the consent as it now stands, which saves reading it
+        # back. Should it come without its elements, the consent grants what it
+        # was created with: approving one grants all of them.
+        approved = _record(updated) if updated.get("id") else None
+        if approved is None or not approved.permissions:
+            approved = ConsentRecord(
+                consent_id=record.consent_id,
+                status=str(updated.get("state") or STATE_ACTIVE).upper(),
+                permissions=record.permissions,
+                expiration_time=int(updated.get("expiryTime") or record.expiration_time),
+                subject=record.subject,
+                actor=record.actor,
+                debtor_account=account_id or record.debtor_account,
+                properties=body.get("properties", record.properties),
+            )
+        return approved
 
     async def revoke(self, consent_id: str, *, user_id: str) -> None:
         """Retire a consent that has been spent.
@@ -412,25 +448,3 @@ class ConsentClient:
         except ConsentServiceError as exc:
             logger.warning("Consent lookup failed: %s", exc)
         return None
-
-    async def validate(self, *, consent_id: str, subject: str, permissions: frozenset[str]) -> bool:
-        """The check at the point of use: is this consent live, this
-        customer's, and does it grant these permissions?
-
-        The store's validate answers the state (with its expiry applied); the
-        owner and the permissions are compared here, from the record.
-        """
-        state = await self._request("GET", f"/consents/{consent_id}/validate")
-        if str(state.get("state", "")).upper() != STATE_ACTIVE:
-            logger.warning("Consent %s rejected: state %s", consent_id, state.get("state"))
-            return False
-        record = await self.get(consent_id)
-        if record.subject != subject:
-            logger.warning("Consent %s rejected: it belongs to another subject", consent_id)
-            return False
-        if not permissions <= record.permissions:
-            logger.warning(
-                "Consent %s rejected: lacks %s", consent_id, " ".join(sorted(permissions - record.permissions))
-            )
-            return False
-        return True
