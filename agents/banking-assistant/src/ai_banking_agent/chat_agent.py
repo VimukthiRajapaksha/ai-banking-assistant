@@ -11,7 +11,6 @@ import logging
 from typing import Any
 
 from anthropic import AsyncAnthropic
-from mcp.types import Tool as McpTool
 from pydantic_ai import Agent, FunctionToolset, RunContext, Tool
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.anthropic import AnthropicModel
@@ -136,11 +135,6 @@ def build_chat_agent(
         system_prompt=SYSTEM_PROMPT,
     )
 
-    # The last listing seen, for a turn whose own connection failed: the model
-    # keeps the same tools (and the call then reports the outage where it
-    # belongs) instead of answering a banking question with none.
-    last_listing: list[McpTool] = []
-
     @agent.toolset(per_run_step=False)
     def mcp_tools(ctx: RunContext[SessionRuntime]) -> FunctionToolset[SessionRuntime]:
         """The MCP server's tools, exactly as it describes them.
@@ -150,9 +144,6 @@ def build_chat_agent(
         run: the listing is fixed for the turn, and changing tool definitions
         mid-run would invalidate the model's earlier reasoning.
         """
-        nonlocal last_listing
-        if ctx.deps.mcp_tools:
-            last_listing = ctx.deps.mcp_tools
         return FunctionToolset([
             Tool.from_schema(
                 _forward(mcp_server_url, tool.name),
@@ -162,7 +153,7 @@ def build_chat_agent(
                 json_schema=tool.input_schema,
                 takes_ctx=True,
             )
-            for tool in last_listing
+            for tool in ctx.deps.mcp_tools
         ])
 
     return agent

@@ -31,12 +31,17 @@ from contextlib import AsyncExitStack, asynccontextmanager
 import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
-from mcp.types import ElicitResult, InputRequiredResult, TextContent
+from mcp.types import ElicitResult, InputRequiredResult, TextContent, Tool
 
 from ai_banking_agent.sessions import SessionRuntime
 from ai_banking_agent.telemetry import untraced
 
 logger = logging.getLogger(__name__)
+
+#: The last tool listing any session received, for a turn whose own listing
+#: fails. Process-wide: every customer sees the same tools.
+_last_listing: list[Tool] = []
+
 
 class ConsentRequired(Exception):
     """Raised when the MCP server needs the user's consent before this tool
@@ -106,7 +111,10 @@ async def turn_connection(server_url: str, runtime: SessionRuntime) -> AsyncIter
     calls no tool makes no MCP call at all, and a tool call opens its own
     (call_tool). If the server cannot be reached the turn still runs: a reply
     that needs no tool should not fail because the bank is down, and a tool
-    call then reports the failure where it belongs.
+    call then reports the failure where it belongs -- but only while an
+    earlier listing is known. With none, the failure is raised: a model given
+    no tools does not say it cannot look, it writes a tool call as text and
+    makes up the result.
     """
     if runtime.mcp_tools:
         yield
@@ -121,9 +129,15 @@ async def turn_connection(server_url: str, runtime: SessionRuntime) -> AsyncIter
                 with untraced():
                     session = await stack.enter_async_context(_open_session(server_url, runtime))
                     runtime.mcp_tools = (await session.list_tools()).tools
+                _last_listing[:] = runtime.mcp_tools
             except Exception as exc:  # noqa: BLE001 - degrade, never block the turn
-                logger.warning("MCP connection for this turn failed; tools will connect per call: %s", exc)
                 await stack.aclose()
+                if not _last_listing:
+                    raise
+                logger.warning("MCP connection for this turn failed; tools will connect per call: %s", exc)
+                # The same tools as last time, so the model still calls them
+                # and the call reports the outage.
+                runtime.mcp_tools = list(_last_listing)
                 session = None
             runtime.mcp_session = session
             try:
